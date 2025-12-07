@@ -3,6 +3,7 @@ import React from 'react';
 import { AppScreen } from '../types';
 import { Button } from '../components/Button';
 import { Check } from 'lucide-react';
+import logoQD from '../src/img/logo_qd.png';
 
 interface RulesProps {
   onNavigate: (screen: AppScreen) => void;
@@ -11,7 +12,14 @@ interface RulesProps {
 export const Rules: React.FC<RulesProps> = ({ onNavigate }) => {
   return (
     <div className="h-full flex flex-col bg-brand-dark p-8">
-      <div className="flex-1 flex flex-col justify-center">
+            <div className="flex-1 flex flex-col justify-center">
+                <div className="flex justify-center mb-8">
+                    <img 
+                        src={logoQD} 
+                        alt="Logomarca The Game" 
+                        className="w-24 h-24 object-contain drop-shadow-[0_0_20px_rgba(233,30,99,0.35)]" 
+                    />
+                </div>
         <h1 className="text-3xl font-extrabold text-white mb-2">Bem Vindo ao The Game!</h1>
         <p className="text-gray-400 text-sm font-bold uppercase tracking-wider mb-10">Por favor, siga estas regras!</p>
 

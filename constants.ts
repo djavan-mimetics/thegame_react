@@ -160,16 +160,16 @@ export const RANKING_DATA = [
 ];
 
 export const MOCK_PAYMENTS: Payment[] = [
-    { id: 'p1', date: '24/05/2024', plan: 'Plano Mensal', amount: 'R$ 19,90', status: 'Pago', cardLast4: '4242' },
-    { id: 'p2', date: '24/04/2024', plan: 'Plano Mensal', amount: 'R$ 19,90', status: 'Pago', cardLast4: '4242' },
-    { id: 'p3', date: '24/03/2024', plan: 'Plano Mensal', amount: 'R$ 19,90', status: 'Falha', cardLast4: '4242' },
+    { id: 'p1', date: '24/05/2025', plan: 'Plano Mensal', amount: 'R$ 19,90', status: 'Pago', cardLast4: '4242' },
+    { id: 'p2', date: '24/04/2025', plan: 'Plano Mensal', amount: 'R$ 19,90', status: 'Pago', cardLast4: '4242' },
+    { id: 'p3', date: '24/03/2025', plan: 'Plano Mensal', amount: 'R$ 19,90', status: 'Falha', cardLast4: '4242' },
 ];
 
 export const MOCK_REPORTS: ReportTicket[] = [
     {
         id: 'r-4812',
         offenderName: 'Ricardo',
-        date: '24/05/2024',
+        date: '24/05/2025',
         reason: 'Assédio Verbal / Ofensas',
         description: 'O usuário começou a me ofender após eu dizer que não estava interessada em sair com ele hoje.',
         status: 'Em Análise',
@@ -178,25 +178,25 @@ export const MOCK_REPORTS: ReportTicket[] = [
                 id: 'u1',
                 sender: 'support',
                 text: 'Olá. Recebemos sua denúncia e já iniciamos a análise do perfil reportado. Nossa equipe de segurança prioriza casos de assédio.',
-                timestamp: '24/05/2024 14:30'
+                timestamp: '24/05/2025 14:30'
             },
             {
                 id: 'u2',
                 sender: 'support',
                 text: 'Você poderia nos enviar capturas de tela da conversa, se houver? Isso ajuda a acelerar o processo.',
-                timestamp: '24/05/2024 14:35'
+                timestamp: '24/05/2025 14:35'
             },
             {
                 id: 'u3',
                 sender: 'user',
                 text: 'Claro, tenho os prints salvos. Como faço para enviar por aqui?',
-                timestamp: '24/05/2024 14:40'
+                timestamp: '24/05/2025 14:40'
             },
              {
                 id: 'u4',
                 sender: 'support',
                 text: 'Por enquanto, mantenha os arquivos com você. Se necessário, entraremos em contato via email cadastrado para solicitar as evidências.',
-                timestamp: '24/05/2024 14:45'
+                timestamp: '24/05/2025 14:45'
             }
         ]
     }

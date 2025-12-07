@@ -86,7 +86,7 @@ export const Premium: React.FC<PremiumProps> = ({ onNavigate, isPremium, setPrem
                 {isPremium ? (
                     <div className="mt-4">
                         <span className="inline-block bg-white text-brand-primary font-bold px-3 py-1 rounded-full text-xs uppercase mb-2">Plano Ativo</span>
-                        <p className="text-white/90 text-sm">Seu plano renova em 30/12/2024</p>
+                        <p className="text-white/90 text-sm">Seu plano renova em 30/12/2025</p>
                         <button onClick={() => setPremium(false)} className="mt-4 text-xs text-white/70 hover:text-white underline">
                             Cancelar assinatura (Demo)
                         </button>

@@ -50,6 +50,14 @@
 }
 </script>
 <link rel="stylesheet" href="/index.css">
+<script type="module">
+  import iconUrl from './src/img/icon1024.png';
+  const favicon = document.createElement('link');
+  favicon.rel = 'icon';
+  favicon.type = 'image/png';
+  favicon.href = iconUrl;
+  document.head.appendChild(favicon);
+</script>
 </head>
   <body>
     <div id="root"></div>

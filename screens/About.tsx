@@ -69,7 +69,7 @@ export const About: React.FC<AboutProps> = ({ onNavigate }) => {
         </div>
 
         <div className="text-center text-[10px] text-gray-600 pt-4 pb-8">
-            © 2024 The Game. Todos os direitos reservados.
+            © 2025 The Game. Todos os direitos reservados.
         </div>
       </div>
     </div>

@@ -77,7 +77,7 @@ export const Privacy: React.FC<PrivacyProps> = ({ onNavigate, backScreen = AppSc
         </section>
 
         <div className="pt-8 pb-4 text-center text-xs text-gray-600">
-            Última atualização: 24 de Maio de 2024
+            Última atualização: 24 de Maio de 2025
         </div>
       </div>
     </div>

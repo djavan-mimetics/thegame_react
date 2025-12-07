@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { AppScreen } from '../types';
 import { Button } from '../components/Button';
 import { ArrowLeft, Mail, Facebook } from 'lucide-react';
+import logoQD from '../src/img/logo_qd.png';
 
 interface LoginProps {
   onNavigate: (screen: AppScreen) => void;
@@ -49,6 +50,13 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
         }} className="p-2 -ml-2 text-gray-400 hover:text-white mb-4">
             <ArrowLeft />
         </button>
+        <div className="flex justify-center mb-4">
+          <img 
+            src={logoQD} 
+            alt="Logomarca The Game" 
+            className="w-20 h-20 object-contain drop-shadow-[0_0_20px_rgba(233,30,99,0.35)]" 
+          />
+        </div>
         <h1 className="text-4xl font-bold text-white mb-2">Bem-vindo<br/>de volta</h1>
         <p className="text-gray-400">Faça login para continuar.</p>
       </div>
