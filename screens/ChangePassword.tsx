@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { AppScreen } from '../types';
-import { ArrowLeft, Lock, Check } from 'lucide-react';
+import { ArrowLeft, Lock, Check, Eye, EyeOff } from 'lucide-react';
 import { Button } from '../components/Button';
 
 interface ChangePasswordProps {
@@ -13,11 +13,36 @@ export const ChangePassword: React.FC<ChangePasswordProps> = ({ onNavigate }) =>
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+    const [showCurrent, setShowCurrent] = useState(false);
+    const [showNew, setShowNew] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
+
+    const isStrongPassword = (value: string) => {
+        const hasUpper = /[A-Z]/.test(value);
+        const hasLower = /[a-z]/.test(value);
+        const hasNumber = /\d/.test(value);
+        const hasSymbol = /[^A-Za-z0-9]/.test(value);
+        return value.length >= 8 && hasUpper && hasLower && hasNumber && hasSymbol;
+    };
+
+    const passwordValid = isStrongPassword(newPassword);
+    const passwordsMatch = confirmPassword.length > 0 && newPassword === confirmPassword;
+    const canSubmit = Boolean(
+        currentPassword &&
+        newPassword &&
+        confirmPassword &&
+        passwordValid &&
+        passwordsMatch
+    );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      alert("As senhas não coincidem!");
+        if (!passwordValid) {
+            alert("A nova senha precisa ter pelo menos 8 caracteres, incluindo letras maiúsculas, minúsculas, números e símbolos.");
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            alert("As senhas não coincidem!");
       return;
     }
     // Simulate API call
@@ -56,13 +81,20 @@ export const ChangePassword: React.FC<ChangePasswordProps> = ({ onNavigate }) =>
                         <div className="relative">
                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
                             <input 
-                                type="password" 
+                                type={showCurrent ? 'text' : 'password'} 
                                 value={currentPassword}
                                 onChange={(e) => setCurrentPassword(e.target.value)}
-                                className="w-full bg-brand-dark border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white text-sm focus:border-brand-primary outline-none transition-colors"
+                                className="w-full bg-brand-dark border border-white/10 rounded-xl py-3 pl-12 pr-12 text-white text-sm focus:border-brand-primary outline-none transition-colors"
                                 placeholder="••••••••"
                                 required
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowCurrent(prev => !prev)}
+                                className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-white"
+                            >
+                                {showCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -73,15 +105,25 @@ export const ChangePassword: React.FC<ChangePasswordProps> = ({ onNavigate }) =>
                         <div className="relative">
                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
                             <input 
-                                type="password" 
+                                type={showNew ? 'text' : 'password'} 
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
-                                className="w-full bg-brand-dark border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white text-sm focus:border-brand-primary outline-none transition-colors"
+                                className={`w-full bg-brand-dark border rounded-xl py-3 pl-12 pr-12 text-white text-sm outline-none transition-colors ${newPassword && !passwordValid ? 'border-red-500 focus:border-red-400' : 'border-white/10 focus:border-brand-primary'}`}
                                 placeholder="••••••••"
                                 required
-                                minLength={6}
+                                minLength={8}
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowNew(prev => !prev)}
+                                className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-white"
+                            >
+                                {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
                         </div>
+                        <p className={`text-xs ml-1 ${newPassword ? (passwordValid ? 'text-gray-400' : 'text-red-500') : 'text-gray-500'}`}>
+                            Use pelo menos 8 caracteres com letras maiúsculas, minúsculas, números e símbolos.
+                        </p>
                     </div>
 
                     <div className="space-y-2">
@@ -89,25 +131,35 @@ export const ChangePassword: React.FC<ChangePasswordProps> = ({ onNavigate }) =>
                         <div className="relative">
                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
                             <input 
-                                type="password" 
+                                type={showConfirm ? 'text' : 'password'} 
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
-                                className="w-full bg-brand-dark border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white text-sm focus:border-brand-primary outline-none transition-colors"
+                                className={`w-full bg-brand-dark border rounded-xl py-3 pl-12 pr-12 text-white text-sm outline-none transition-colors ${confirmPassword && !passwordsMatch ? 'border-red-500 focus:border-red-400' : 'border-white/10 focus:border-brand-primary'}`}
                                 placeholder="••••••••"
                                 required
-                                minLength={6}
+                                minLength={8}
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirm(prev => !prev)}
+                                className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-white"
+                            >
+                                {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
                         </div>
+                        {confirmPassword && !passwordsMatch && (
+                            <p className="text-xs text-red-500 ml-1">As senhas precisam ser iguais.</p>
+                        )}
                     </div>
                 </div>
 
                 <ul className="text-xs text-gray-500 list-disc pl-5 space-y-1">
-                    <li>Mínimo de 6 caracteres</li>
-                    <li>Use uma mistura de letras e números para maior segurança</li>
+                    <li>Pelo menos 8 caracteres.</li>
+                    <li>Combine letras maiúsculas, minúsculas, números e símbolos para uma senha forte.</li>
                 </ul>
 
                 <div className="pt-4">
-                    <Button fullWidth type="submit" className="shadow-lg shadow-brand-primary/20">
+                    <Button fullWidth type="submit" disabled={!canSubmit} className="shadow-lg shadow-brand-primary/20 disabled:opacity-40 disabled:cursor-not-allowed">
                         Atualizar Senha
                     </Button>
                 </div>

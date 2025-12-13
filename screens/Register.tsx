@@ -2,12 +2,23 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AppScreen } from '../types';
 import { Button } from '../components/Button';
-import { ArrowLeft, Mail, Facebook, ChevronRight, Camera, Check, User, Calendar, MapPin, Heart, Plus, ChevronDown, RotateCcw, X, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { ArrowLeft, Mail, Facebook, ChevronRight, Camera, Check, User, Calendar, MapPin, Heart, Plus, ChevronDown, RotateCcw, X, Image as ImageIcon, Trash2, Eye, EyeOff } from 'lucide-react';
 import { TAGS_LIST, LOCATIONS, GENDER_OPTIONS, LOOKING_FOR_OPTIONS, RELATIONSHIP_OPTIONS } from '../constants';
+import logoQD from '../src/img/logo_qd.png';
 
 interface RegisterProps {
   onNavigate: (screen: AppScreen) => void;
 }
+
+const LogoFooter = () => (
+    <div className="mt-auto pt-8 pb-4 flex justify-center">
+        <img 
+            src={logoQD} 
+            alt="Logomarca The Game" 
+            className="w-16 h-16 object-contain opacity-90" 
+        />
+    </div>
+);
 
 export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
   const [step, setStep] = useState(0);
@@ -24,6 +35,9 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
     relationship: '',
     images: [] as string[]
   });
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Photo Editing State
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
@@ -41,6 +55,14 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
   const updateData = (key: string, value: any) => {
     setFormData(prev => ({ ...prev, [key]: value }));
   };
+
+    const isStrongPassword = (value: string) => {
+        const hasUpper = /[A-Z]/.test(value);
+        const hasLower = /[a-z]/.test(value);
+        const hasNumber = /\d/.test(value);
+        const hasSymbol = /[^A-Za-z0-9]/.test(value);
+        return value.length >= 8 && hasUpper && hasLower && hasNumber && hasSymbol;
+    };
 
   // --- Helper Functions ---
   const handleDateChange = (value: string) => {
@@ -131,8 +153,8 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
 
   // STEP 0: METHOD SELECTION
   if (step === 0) {
-    return (
-      <div className="h-full flex flex-col p-6 bg-brand-dark">
+        return (
+            <div className="min-h-screen flex flex-col p-6 bg-brand-dark">
         <div className="mb-6 mt-2">
             <button onClick={handleBack} className="p-2 -ml-2 text-gray-400 hover:text-white mb-4"><ArrowLeft /></button>
             <h1 className="text-4xl font-bold text-white mb-2">Vamos<br/>Começar</h1>
@@ -144,12 +166,23 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
             <div className="relative py-4"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-800"></div></div><div className="relative flex justify-center text-sm"><span className="px-2 bg-brand-dark text-gray-500">ou</span></div></div>
             <button onClick={() => { updateData('method', 'email'); handleNext(); }} className="w-full bg-brand-card border-2 border-brand-primary/50 text-white font-bold py-3.5 px-6 rounded-full flex items-center justify-center gap-3 hover:bg-brand-card/80 transition-colors"><Mail size={20} />Entrar com Email</button>
         </div>
+                <LogoFooter />
       </div>
     );
   }
 
   // STEP 1: CREDENTIALS (IF EMAIL)
   if (step === 1) {
+    const passwordValid = isStrongPassword(formData.password);
+    const passwordsMatch = confirmPassword.length > 0 && formData.password === confirmPassword;
+    const canContinue = Boolean(
+        formData.email &&
+        formData.password &&
+        confirmPassword &&
+        passwordValid &&
+        passwordsMatch
+    );
+
     return (
       <WizardLayout title="Criar Conta" subtitle="Digite seu email e senha" onBack={handleBack}>
          <div className="space-y-4">
@@ -159,10 +192,50 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
             </div>
             <div>
                 <label className="text-xs font-bold text-brand-primary uppercase ml-1 mb-1 block">Senha</label>
-                <input type="password" value={formData.password} onChange={e => updateData('password', e.target.value)} className="w-full bg-brand-card border border-gray-700 rounded-xl px-4 py-3 text-white focus:border-brand-primary focus:outline-none" placeholder="••••••••" />
+                <div className="relative">
+                    <input 
+                        type={showPassword ? 'text' : 'password'} 
+                        value={formData.password} 
+                        onChange={e => updateData('password', e.target.value)} 
+                        className={`w-full bg-brand-card border rounded-xl px-4 pr-12 py-3 text-white focus:border-brand-primary focus:outline-none ${formData.password && !passwordValid ? 'border-red-500' : 'border-gray-700'}`} 
+                        placeholder="••••••••" 
+                    />
+                    <button 
+                        type="button" 
+                        onClick={() => setShowPassword(prev => !prev)} 
+                        className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-white"
+                    >
+                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                </div>
+                <p className={`text-xs mt-1 ml-1 ${formData.password ? (passwordValid ? 'text-gray-400' : 'text-red-500') : 'text-gray-500'}`}>
+                    Use ao menos 8 caracteres com letras maiúsculas, minúsculas, números e símbolos.
+                </p>
+            </div>
+            <div>
+                <label className="text-xs font-bold text-brand-primary uppercase ml-1 mb-1 block">Confirmar senha</label>
+                <div className="relative">
+                    <input 
+                        type={showConfirmPassword ? 'text' : 'password'} 
+                        value={confirmPassword} 
+                        onChange={e => setConfirmPassword(e.target.value)} 
+                        className={`w-full bg-brand-card border rounded-xl px-4 pr-12 py-3 text-white focus:border-brand-primary focus:outline-none ${confirmPassword && !passwordsMatch ? 'border-red-500' : 'border-gray-700'}`} 
+                        placeholder="Repita a senha" 
+                    />
+                    <button 
+                        type="button" 
+                        onClick={() => setShowConfirmPassword(prev => !prev)} 
+                        className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-white"
+                    >
+                        {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                </div>
+                {confirmPassword && !passwordsMatch && (
+                    <p className="text-xs text-red-500 mt-1 ml-1">As senhas precisam ser iguais.</p>
+                )}
             </div>
          </div>
-         <Button fullWidth onClick={handleNext} disabled={!formData.email || !formData.password} className="mt-8">Continuar</Button>
+         <Button fullWidth onClick={handleNext} disabled={!canContinue} className="mt-8">Continuar</Button>
       </WizardLayout>
     );
   }
@@ -283,7 +356,7 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
       
       return (
         <WizardLayout title="Tenho interesse em" subtitle="Quem você quer conhecer?" onBack={handleBack}>
-           <div className="space-y-3">
+           <div className="space-y-3 overflow-y-auto max-h-[52vh] pr-1 pb-4 no-scrollbar">
                {LOOKING_FOR_OPTIONS.map(opt => (
                    <button key={opt} onClick={() => toggle(opt)} className={`w-full p-4 rounded-xl border flex justify-between items-center transition-all ${formData.lookingFor.includes(opt) ? 'bg-brand-primary/20 border-brand-primary text-white font-bold' : 'bg-brand-card border-gray-800 text-gray-300 hover:bg-gray-800'}`}>
                        {opt} {formData.lookingFor.includes(opt) && <Check size={20} className="text-brand-primary" />}
@@ -312,8 +385,8 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
 
   // STEP 7: PHOTOS
   if (step === 7) {
-      return (
-        <div className="h-full flex flex-col bg-brand-dark overflow-hidden relative">
+            return (
+                <div className="min-h-screen flex flex-col bg-brand-dark overflow-hidden relative">
             <input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={onFileSelect} />
             
             <WizardLayout title="Suas Fotos" subtitle="Adicione pelo menos 2 fotos" onBack={handleBack}>
@@ -368,28 +441,32 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
   }
 
   // STEP 8: SUCCESS
-  return (
-    <div className="h-full flex flex-col items-center justify-center p-8 bg-brand-dark animate-in fade-in duration-500">
-        <div className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mb-6">
-            <Check size={48} className="text-green-500" />
+    return (
+        <div className="min-h-screen flex flex-col p-8 bg-brand-dark animate-in fade-in duration-500">
+                <div className="flex-1 flex flex-col items-center justify-center text-center">
+                        <div className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mb-6">
+                                <Check size={48} className="text-green-500" />
+                        </div>
+                        <h1 className="text-3xl font-bold text-white mb-2">Tudo pronto!</h1>
+                        <p className="text-gray-400 text-center mb-10 max-w-sm">Seu perfil foi criado com sucesso. Agora é só entrar e começar a jogar.</p>
+                        <Button fullWidth onClick={() => onNavigate(AppScreen.LOGIN)}>Efetuar Login</Button>
+                </div>
+                <LogoFooter />
         </div>
-        <h1 className="text-3xl font-bold text-white mb-2">Tudo pronto!</h1>
-        <p className="text-gray-400 text-center mb-10">Seu perfil foi criado com sucesso. Agora é só entrar e começar a jogar.</p>
-        <Button fullWidth onClick={() => onNavigate(AppScreen.LOGIN)}>Efetuar Login</Button>
-    </div>
-  );
+    );
 };
 
 const WizardLayout = ({ title, subtitle, onBack, children }: { title: string, subtitle: string, onBack: () => void, children: React.ReactNode }) => (
-    <div className="h-full flex flex-col p-6 bg-brand-dark overflow-y-auto no-scrollbar">
+    <div className="min-h-screen flex flex-col p-6 bg-brand-dark">
         <div className="mb-8 mt-2">
             <button onClick={onBack} className="p-2 -ml-2 text-gray-400 hover:text-white mb-4"><ArrowLeft /></button>
             <h1 className="text-3xl font-bold text-white mb-1">{title}</h1>
             <p className="text-gray-400 text-sm">{subtitle}</p>
         </div>
-        <div className="flex-1">
+        <div className="flex-1 overflow-y-auto no-scrollbar">
             {children}
         </div>
+        <LogoFooter />
     </div>
 );
 
@@ -427,48 +504,47 @@ const PhotoEditor = ({ imageSrc, onSave, onCancel }: { imageSrc: string, onSave:
 
     const handleSave = () => {
         if (!frameRef.current || !imageRef.current) return;
-        
+
         const canvas = document.createElement('canvas');
         canvas.width = 1080;
         canvas.height = 1920;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // Fill black background
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, 1080, 1920);
 
-        // Map screen pixels to canvas pixels based on the frame width
         const frameRect = frameRef.current.getBoundingClientRect();
-        const multiplier = 1080 / frameRect.width; 
+        const visibleWidth = frameRect.width;
+        const visibleHeight = frameRect.height;
+        const widthRatio = canvas.width / visibleWidth;
+        const heightRatio = canvas.height / visibleHeight;
 
         const img = imageRef.current;
-        
-        // Calculate "Cover" dimensions for the 1080x1920 canvas
-        // This corresponds to the object-fit: cover behavior inside the editor frame
-        const imgRatio = img.naturalWidth / img.naturalHeight;
-        const targetRatio = 1080 / 1920;
-        
-        let drawW, drawH;
-        if (imgRatio > targetRatio) {
-            // Image is wider than target: Fill Height, Crop Width
-            drawH = 1920;
-            drawW = 1920 * imgRatio;
+        const imgAspect = img.naturalWidth / img.naturalHeight;
+        const frameAspect = visibleWidth / visibleHeight;
+
+        let baseWidth: number;
+        let baseHeight: number;
+        if (imgAspect > frameAspect) {
+            baseHeight = visibleHeight;
+            baseWidth = visibleHeight * imgAspect;
         } else {
-            // Image is taller than target: Fill Width, Crop Height
-            drawW = 1080;
-            drawH = 1080 / imgRatio;
+            baseWidth = visibleWidth;
+            baseHeight = visibleWidth / imgAspect;
         }
 
+        baseWidth *= scale;
+        baseHeight *= scale;
+
+        const offsetX = (visibleWidth - baseWidth) / 2 + pan.x;
+        const offsetY = (visibleHeight - baseHeight) / 2 + pan.y;
+
         ctx.save();
-        // Move origin to center of canvas
-        ctx.translate(1080 / 2, 1920 / 2);
-        // Apply visual Pan (scaled up to canvas resolution)
-        ctx.translate(pan.x * multiplier, pan.y * multiplier);
-        // Apply visual Scale
-        ctx.scale(scale, scale);
-        // Draw image centered at current origin
-        ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.scale(widthRatio, heightRatio);
+        ctx.translate(offsetX, offsetY);
+        ctx.drawImage(img, -baseWidth / 2, -baseHeight / 2, baseWidth, baseHeight);
         ctx.restore();
 
         onSave(canvas.toDataURL('image/jpeg', 0.9));
@@ -505,10 +581,12 @@ const PhotoEditor = ({ imageSrc, onSave, onCancel }: { imageSrc: string, onSave:
                             style={{ 
                                 width: '100%',
                                 height: '100%',
-                                objectFit: 'cover',
+                                objectFit: 'contain',
                                 transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
                                 transformOrigin: 'center',
-                                touchAction: 'none'
+                                touchAction: 'none',
+                                maxWidth: 'none',
+                                maxHeight: 'none'
                             }}
                             draggable={false}
                         />
@@ -529,8 +607,8 @@ const PhotoEditor = ({ imageSrc, onSave, onCancel }: { imageSrc: string, onSave:
                 </div>
                 <input 
                     type="range" 
-                    min="0.5" 
-                    max="3" 
+                    min="1" 
+                    max="3.5" 
                     step="0.1" 
                     value={scale} 
                     onChange={e => setScale(parseFloat(e.target.value))} 

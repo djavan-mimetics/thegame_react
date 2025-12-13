@@ -42,24 +42,19 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
   );
 
   return (
-    <div className="h-full flex flex-col p-6 bg-brand-dark">
-      <div className="mb-6 mt-2">
+    <div className="min-h-screen flex flex-col bg-brand-dark">
+      <div className="flex-1 flex flex-col p-6">
+        <div className="mb-6 mt-2">
         <button onClick={() => {
             if (loginMethod === 'email') setLoginMethod('selection');
             else onNavigate(AppScreen.WELCOME);
         }} className="p-2 -ml-2 text-gray-400 hover:text-white mb-4">
             <ArrowLeft />
         </button>
-        <div className="flex justify-center mb-4">
-          <img 
-            src={logoQD} 
-            alt="Logomarca The Game" 
-            className="w-20 h-20 object-contain drop-shadow-[0_0_20px_rgba(233,30,99,0.35)]" 
-          />
-        </div>
+
         <h1 className="text-4xl font-bold text-white mb-2">Bem-vindo<br/>de volta</h1>
         <p className="text-gray-400">Faça login para continuar.</p>
-      </div>
+        </div>
 
       {loginMethod === 'selection' ? (
         <div className="flex-1 flex flex-col justify-center space-y-4">
@@ -97,7 +92,7 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
             </button>
         </div>
       ) : (
-        <form onSubmit={handleLogin} className="space-y-6 flex-1">
+          <form onSubmit={handleLogin} className="space-y-6 flex-1 flex flex-col justify-center">
             <div className="space-y-4">
                 <div>
                     <label className="text-xs font-bold text-brand-primary uppercase ml-1 mb-1 block">Email</label>
@@ -136,11 +131,20 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
         </form>
       )}
       
-      <div className="mt-auto text-center pt-6">
-        <p className="text-gray-500 text-sm">
-            Não tem uma conta? <button onClick={() => onNavigate(AppScreen.REGISTER)} className="text-brand-primary font-bold hover:underline">Cadastre-se</button>
-        </p>
+        <div className="mt-10 text-center">
+          <p className="text-gray-500 text-sm">
+              Não tem uma conta? <button onClick={() => onNavigate(AppScreen.REGISTER)} className="text-brand-primary font-bold hover:underline">Cadastre-se</button>
+          </p>
+        </div>
       </div>
+
+      <footer className="py-6 flex justify-center border-t border-white/5">
+        <img 
+            src={logoQD}
+            alt="Logomarca The Game"
+            className="w-16 h-16 object-contain opacity-90"
+        />
+      </footer>
     </div>
   );
 };

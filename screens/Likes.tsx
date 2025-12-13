@@ -60,10 +60,10 @@ export const Likes: React.FC<LikesProps> = ({ isPremium, onNavigate }) => {
 
             {/* Upsell Sticky Button - Only show if not premium */}
             {!isPremium && (
-                <div className="fixed bottom-24 left-4 right-4 max-w-md mx-auto">
+                <div className="fixed bottom-28 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-50">
                     <Button 
                         fullWidth 
-                        className="shadow-2xl shadow-brand-primary/50"
+                        className="shadow-[0_20px_45px_rgba(233,30,99,0.35)]"
                         onClick={() => onNavigate && onNavigate(AppScreen.PREMIUM)}
                     >
                         Veja quem curtiu você

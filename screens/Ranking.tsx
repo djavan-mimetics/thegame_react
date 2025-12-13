@@ -92,10 +92,10 @@ export const Ranking: React.FC = () => {
         })}
       </div>
 
-      {/* Location Selection Modal */}
-      {isModalOpen && (
-        <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
-            <div className="bg-[#1e1e1e] w-full max-w-md rounded-t-3xl sm:rounded-3xl border-t sm:border border-white/10 p-6 relative shadow-2xl max-h-[80vh] flex flex-col">
+    {/* Location Selection Modal */}
+        {isModalOpen && (
+            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-center items-center px-4 py-6 animate-in fade-in duration-200">
+                <div className="bg-[#1e1e1e] w-full max-w-md rounded-3xl border border-white/10 p-6 relative shadow-2xl max-h-[90vh] flex flex-col">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-bold text-white">Alterar Localização</h3>
                     <button 

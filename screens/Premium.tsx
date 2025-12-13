@@ -250,8 +250,8 @@ export const Premium: React.FC<PremiumProps> = ({ onNavigate, isPremium, setPrem
       )}
 
       {/* Checkout Modal */}
-      {isCheckoutOpen && (
-         <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+        {isCheckoutOpen && (
+            <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-center items-start sm:items-center px-0 sm:px-4 py-8 sm:py-4 animate-in fade-in duration-200">
             <div className="bg-[#120516] w-full max-w-md rounded-t-3xl sm:rounded-3xl border-t sm:border border-brand-primary/20 p-6 relative shadow-2xl h-[90vh] flex flex-col">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-bold text-white">Assinar Premium</h3>
@@ -263,10 +263,11 @@ export const Premium: React.FC<PremiumProps> = ({ onNavigate, isPremium, setPrem
                     </button>
                 </div>
 
-                <form onSubmit={handlePurchase} className="flex-1 flex flex-col overflow-y-auto no-scrollbar">
+                <form onSubmit={handlePurchase} className="flex-1 flex flex-col overflow-y-auto no-scrollbar gap-6">
                     
-                    {/* Plan Selection - INCREASED SIZE AND SPACING */}
-                    <div className="grid grid-cols-3 gap-3 mb-8 pt-4">
+                    {/* Plan Selection */}
+                    <div className="mt-auto pb-1"></div>
+                    <div className="grid grid-cols-3 gap-3">
                         {(['monthly', 'semiannual', 'annual'] as const).map((planKey) => {
                             const plan = plans[planKey];
                             const isSelected = selectedPlan === planKey;
@@ -274,14 +275,14 @@ export const Premium: React.FC<PremiumProps> = ({ onNavigate, isPremium, setPrem
                                 <div 
                                     key={planKey}
                                     onClick={() => setSelectedPlan(planKey)}
-                                    className={`relative rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer border-2 transition-all h-32 ${
+                                    className={`relative rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer border-2 transition-all h-32 overflow-visible ${
                                         isSelected 
                                         ? 'bg-brand-primary/10 border-brand-primary' 
                                         : 'bg-brand-card border-transparent hover:border-gray-700'
                                     }`}
                                 >
                                     {plan.discount && (
-                                        <div className="absolute -top-3 bg-green-500 text-black text-[10px] font-bold px-2 py-1 rounded-full shadow-md z-10">
+                                        <div className="absolute -top-4 right-2 bg-green-400 text-black text-[10px] font-black px-2.5 py-1 rounded-full shadow-lg z-20 pointer-events-none">
                                             {plan.discount} OFF
                                         </div>
                                     )}
@@ -296,13 +297,13 @@ export const Premium: React.FC<PremiumProps> = ({ onNavigate, isPremium, setPrem
                     </div>
 
                     {/* Recurrence Switch */}
-                    <div className="flex items-center justify-between bg-brand-card p-4 rounded-xl mb-6 border border-white/5">
+                    <div className="flex items-center justify-between bg-brand-card p-4 rounded-xl border border-white/5">
                         <span className="text-sm font-bold text-white">Renovação automática</span>
                         <Toggle checked={isRecurring} onChange={() => setIsRecurring(!isRecurring)} />
                     </div>
 
                     {/* Credit Card Form (Stripe-like) */}
-                    <div className="space-y-4 mb-6">
+                    <div className="space-y-4">
                         <h4 className="text-sm font-bold text-gray-400 uppercase">Dados do Cartão</h4>
                         
                         <div className="space-y-3">

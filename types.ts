@@ -14,11 +14,19 @@ export interface UserProfile {
   sign?: string;
   height?: string;
   education?: string;
+  intention?: string;
   relationship?: string;
+  family?: string;
+  communication?: string;
+  loveLanguage?: string;
   drink?: string;
   smoke?: string;
   pets?: string;
   exercise?: string;
+  food?: string;
+  sleep?: string;
+  personality?: string[];
+  lookingFor?: string[];
 }
 
 export interface MyProfile {
@@ -51,6 +59,7 @@ export interface Message {
   text: string;
   timestamp: string;
   isMe: boolean;
+  variant?: 'icebreaker' | 'compliment';
 }
 
 export interface Payment {
@@ -103,7 +112,17 @@ export enum AppScreen {
   ABOUT = 'ABOUT',
   TERMS_SECURITY = 'TERMS_SECURITY',
   PRIVACY_SECURITY = 'PRIVACY_SECURITY',
-  RULES = 'RULES'
+  RULES = 'RULES',
+  NOTIFICATIONS = 'NOTIFICATIONS'
 }
 
 export type MatchType = 'like' | 'superlike' | 'dislike' | 'neutral';
+
+export interface NotificationItem {
+  id: string;
+  type: 'match' | 'message' | 'superlike' | 'system';
+  title: string;
+  description: string;
+  timestamp: string;
+  seen?: boolean;
+}

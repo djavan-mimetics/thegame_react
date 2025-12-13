@@ -24,7 +24,8 @@ import { ReportList } from './screens/ReportList';
 import { ReportDetail } from './screens/ReportDetail';
 import { About } from './screens/About';
 import { Rules } from './screens/Rules';
-import { MOCK_REPORTS } from './constants';
+import { Notifications } from './screens/Notifications';
+import { MOCK_REPORTS, MOCK_NOTIFICATIONS } from './constants';
 
 const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>(AppScreen.WELCOME);
@@ -48,6 +49,7 @@ const App: React.FC = () => {
   const [reports, setReports] = useState<ReportTicket[]>(MOCK_REPORTS);
   const [reportContext, setReportContext] = useState<{name: string, date: string} | null>(null);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  const [notifications] = useState(MOCK_NOTIFICATIONS);
 
   const updateProfile = (key: keyof MyProfile, value: any) => {
     setMyProfile(prev => ({ ...prev, [key]: value }));
@@ -127,6 +129,7 @@ const App: React.FC = () => {
       {currentScreen === AppScreen.HELP && <Help onNavigate={navigate} />}
       {currentScreen === AppScreen.CHANGE_PASSWORD && <ChangePassword onNavigate={navigate} />}
       {currentScreen === AppScreen.ABOUT && <About onNavigate={navigate} />}
+      {currentScreen === AppScreen.NOTIFICATIONS && <Notifications onNavigate={navigate} items={notifications} />}
 
       {/* Reporting System */}
       {currentScreen === AppScreen.REPORT && <Report onNavigate={navigate} initialContext={reportContext} addReport={addReport} />}

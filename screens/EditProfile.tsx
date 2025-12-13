@@ -254,26 +254,26 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
     );
   };
 
-  return (
-    <div className="h-full flex flex-col bg-brand-dark relative overflow-hidden">
+    return (
+        <div className="h-full flex flex-col bg-brand-dark relative overflow-hidden">
       
-      {/* Hidden File Input */}
-      <input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={onFileSelect} />
+            {/* Hidden File Input */}
+            <input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={onFileSelect} />
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto no-scrollbar pb-20">
-          
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 sticky top-0 bg-brand-dark/95 backdrop-blur-md z-20 border-b border-white/5">
-            <button onClick={() => onNavigate(AppScreen.PROFILE)} className="text-gray-400 p-2 hover:text-white"><ChevronLeft /></button>
-            <div className="text-center">
-                <h1 className="font-bold text-white text-lg">Configurações</h1>
-                <p className="text-[10px] text-brand-primary font-bold">{completion}% Concluído</p>
+            {/* Persistent Header */}
+            <div className="flex items-center justify-between p-4 bg-brand-dark/95 backdrop-blur-md border-b border-white/5 shadow-lg shadow-black/20 z-30">
+                <button onClick={() => onNavigate(AppScreen.PROFILE)} className="text-gray-400 p-2 hover:text-white"><ChevronLeft /></button>
+                <div className="text-center">
+                        <h1 className="font-bold text-white text-lg">Configurações</h1>
+                        <p className="text-[10px] text-brand-primary font-bold">{completion}% Concluído</p>
+                </div>
+                <button onClick={() => onNavigate(AppScreen.PROFILE)} className="text-brand-primary font-bold text-sm p-2 hover:opacity-80">Concluído</button>
             </div>
-            <button onClick={() => onNavigate(AppScreen.PROFILE)} className="text-brand-primary font-bold text-sm p-2 hover:opacity-80">Concluído</button>
-          </div>
 
-          <div className="p-4 space-y-8">
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto no-scrollbar pb-20">
+
+                    <div className="p-4 space-y-8">
             
             {/* Sliders & Premium */}
             <div className="space-y-6">

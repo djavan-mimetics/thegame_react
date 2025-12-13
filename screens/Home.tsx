@@ -1,33 +1,99 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MOCK_PROFILES, TAGS_LIST } from '../constants';
 import { UserProfile, AppScreen } from '../types';
-import { Heart, HeartCrack, MapPin, Info, X, ChevronDown, Instagram, Music, Ruler, Moon, GraduationCap, Wine, Cigarette, Dog, Dumbbell, Briefcase, Search, Globe, Lightbulb } from 'lucide-react';
+import { Heart, HeartCrack, MapPin, Info, X, ChevronDown, Instagram, Music, Ruler, Moon, GraduationCap, Wine, Cigarette, Dog, Dumbbell, Briefcase, Search, Globe, Lightbulb, Target, Users, Baby, MessageCircle, HeartHandshake, Utensils, Bed, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import logoMark from '../src/img/logo.png';
 
 interface HomeProps {
     onNavigate?: (screen: AppScreen) => void;
 }
 
 export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
-  const [profiles, setProfiles] = useState<UserProfile[]>(MOCK_PROFILES);
-  const [lastDirection, setLastDirection] = useState<string | null>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
+    const [profiles, setProfiles] = useState<UserProfile[]>(() => [...MOCK_PROFILES]);
+    const [lastDirection, setLastDirection] = useState<string | null>(null);
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+    const fallbackProfileImage = React.useMemo(() => (
+        `data:image/svg+xml;utf8,${encodeURIComponent(`
+            <svg xmlns='http://www.w3.org/2000/svg' width='400' height='600' viewBox='0 0 400 600'>
+                <defs>
+                    <linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'>
+                        <stop offset='0%' stop-color='#E91E63' />
+                        <stop offset='100%' stop-color='#9C27B0' />
+                    </linearGradient>
+                </defs>
+                <rect width='400' height='600' fill='url(#grad)' />
+                <circle cx='200' cy='220' r='90' fill='rgba(18,5,22,0.35)' />
+                <circle cx='200' cy='210' r='80' fill='rgba(255,255,255,0.08)' />
+                <rect x='110' y='330' width='180' height='190' rx='95' fill='rgba(18,5,22,0.35)' />
+                <rect x='170' y='350' width='60' height='60' rx='30' fill='rgba(255,255,255,0.1)' />
+                <text x='50%' y='540' fill='rgba(255,255,255,0.7)' font-size='28' font-family='Segoe UI' text-anchor='middle'>Perfil Indisponível</text>
+            </svg>
+        `)}`
+    ), []);
+
+    const handleImageError = (event: React.SyntheticEvent<HTMLImageElement>) => {
+        if (event.currentTarget.src !== fallbackProfileImage) {
+                event.currentTarget.onerror = null;
+                event.currentTarget.src = fallbackProfileImage;
+        }
+    };
   
   // State for the user's active active tag
-  const [myTag, setMyTag] = useState<string>("Jogar videogame");
-  const [isTagModalOpen, setIsTagModalOpen] = useState(false);
+    const [myTag, setMyTag] = useState<string>("Jogar videogame");
+    const [isTagModalOpen, setIsTagModalOpen] = useState(false);
 
-  const currentProfile = profiles[0];
+    const currentProfile = profiles[0];
+    const currentImages = currentProfile?.images || [];
+    const displayedImage = currentImages[currentImageIndex] || currentImages[0] || fallbackProfileImage;
 
-  const handleSwipe = (direction: 'left' | 'right' | 'up' | 'down') => {
-    setIsExpanded(false); // Reset expansion on swipe
-    setLastDirection(direction);
-    // Simulate delay for animation
-    setTimeout(() => {
-        setProfiles((prev) => prev.slice(1));
-        setLastDirection(null);
-    }, 300);
-  };
+    const relationshipDetails = [
+        { label: 'Intenção', value: currentProfile?.intention, icon: Target },
+        { label: 'Relacionamento', value: currentProfile?.relationship, icon: Users },
+        { label: 'Família', value: currentProfile?.family, icon: Baby }
+    ].filter(detail => Boolean(detail.value));
+
+    const lifestyleDetails = [
+        { label: 'Comunicação', value: currentProfile?.communication, icon: MessageCircle },
+        { label: 'Linguagem do amor', value: currentProfile?.loveLanguage, icon: HeartHandshake },
+        { label: 'Alimentação', value: currentProfile?.food, icon: Utensils },
+        { label: 'Sono', value: currentProfile?.sleep, icon: Bed }
+    ].filter(detail => Boolean(detail.value));
+
+    const lookingForChips = currentProfile?.lookingFor || [];
+    const personalityTraits = currentProfile?.personality || [];
+
+    const handleSwipe = (direction: 'left' | 'right' | 'up' | 'down') => {
+        setIsExpanded(false); // Reset expansion on swipe
+        setLastDirection(direction);
+        // Simulate delay for animation
+        setTimeout(() => {
+                setProfiles((prev) => {
+                if (prev.length <= 1) {
+                    return [];
+                }
+                const [, ...rest] = prev;
+                return rest;
+                });
+                setLastDirection(null);
+        }, 300);
+    };
+
+    useEffect(() => {
+        setCurrentImageIndex(0);
+    }, [currentProfile?.id]);
+
+    const showPreviousImage = () => {
+        if (currentImages.length <= 1) return;
+        setCurrentImageIndex((prev) => (prev - 1 + currentImages.length) % currentImages.length);
+    };
+
+    const showNextImage = () => {
+        if (currentImages.length <= 1) return;
+        setCurrentImageIndex((prev) => (prev + 1) % currentImages.length);
+    };
 
   const getCardStyle = () => {
     switch (lastDirection) {
@@ -41,7 +107,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
 
   if (!currentProfile) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-brand-dark relative overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center bg-brand-dark relative overflow-hidden">
         {/* Decorative elements */}
         <div className="absolute top-[20%] left-[-10%] w-32 h-32 bg-brand-primary/10 rounded-full blur-3xl" />
         <div className="absolute bottom-[20%] right-[-10%] w-40 h-40 bg-brand-accent/10 rounded-full blur-3xl" />
@@ -88,7 +154,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
             
             {/* Optional: Reset for Demo */}
             <button 
-                onClick={() => setProfiles(MOCK_PROFILES)}
+                onClick={() => setProfiles([...MOCK_PROFILES])}
                 className="mt-6 text-xs text-gray-600 hover:text-gray-400 underline"
             >
                 (Demo: Recarregar Perfis)
@@ -99,7 +165,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
   }
 
   return (
-    <div className="h-full w-full relative bg-black overflow-hidden">
+    <div className="min-h-screen w-full relative bg-black overflow-hidden">
         {/* Custom Animations Styles */}
         <style>{`
             @keyframes float {
@@ -124,10 +190,10 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
         `}</style>
         
       {/* Floating Header - Z-Index 50 to be on top of gesture overlay */}
-      <div className="absolute top-0 left-0 right-0 z-50 p-4 pt-6 flex justify-between items-start bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
-        <div className="flex items-center gap-1 pointer-events-auto">
-            <span className="font-extrabold text-2xl tracking-tighter text-white drop-shadow-md">The Game</span>
-        </div>
+            <div className="absolute top-0 left-0 right-0 z-50 p-4 pt-6 flex justify-between items-start bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+                <div className="flex items-center gap-2 pointer-events-auto bg-black/40 px-3 py-1 rounded-full border border-white/5">
+                        <img src={logoMark} alt="The Game" className="h-6 w-auto object-contain" />
+                </div>
         
         {/* Active Tag Button */}
         <button 
@@ -143,7 +209,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
         {/* Next Card (Behind) */}
         {profiles[1] && (
             <div className="absolute inset-0 bg-brand-dark overflow-hidden">
-                <img src={profiles[1].images[0]} alt="Next" className="w-full h-full object-cover opacity-100" />
+                <img src={profiles[1].images[0]} alt="Next" className="w-full h-full object-cover opacity-100" onError={handleImageError} />
                 <div className="absolute inset-0 bg-black/40" />
             </div>
         )}
@@ -152,18 +218,37 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
         <div className={`absolute inset-0 bg-brand-dark overflow-hidden transition-all duration-300 ease-out origin-bottom ${getCardStyle()}`}>
             {/* Image */}
             <div className="h-full w-full relative">
-                <img src={currentProfile.images[0]} alt={currentProfile.name} className="w-full h-full object-cover" />
+                <img src={displayedImage} alt={currentProfile.name} className="w-full h-full object-cover" onError={handleImageError} />
+
+                {currentImages.length > 1 && (
+                    <>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); showPreviousImage(); }}
+                            className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/20 border border-white/10 text-white flex items-center justify-center backdrop-blur-sm hover:bg-black/40 transition-colors"
+                            aria-label="Foto anterior"
+                        >
+                            <ChevronLeft size={20} />
+                        </button>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); showNextImage(); }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/20 border border-white/10 text-white flex items-center justify-center backdrop-blur-sm hover:bg-black/40 transition-colors"
+                            aria-label="Próxima foto"
+                        >
+                            <ChevronRight size={20} />
+                        </button>
+                    </>
+                )}
                 
                 {/* Info Container - Animated Bottom Sheet */}
                 <div 
-                    className={`absolute bottom-0 left-0 right-0 z-30 flex flex-col items-start transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+                    className={`absolute left-0 right-0 z-30 flex flex-col items-start transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
                         isExpanded 
-                        ? 'h-[85%] bg-black/80 backdrop-blur-xl rounded-t-3xl border-t border-white/10' 
-                        : 'h-[40%] bg-gradient-to-t from-black via-black/80 to-transparent'
+                        ? 'bottom-0 h-[85%] bg-black/80 backdrop-blur-xl rounded-t-3xl border-t border-white/10' 
+                        : 'bottom-[20px] h-[45%] bg-gradient-to-t from-black via-black/80 to-transparent'
                     }`}
                 >
                     {/* Content Scroll Wrapper */}
-                    <div className="w-full h-full overflow-y-auto no-scrollbar px-5 pt-8">
+                    <div className="w-full h-full overflow-y-auto no-scrollbar px-5 pt-8 pb-24">
                         
                         {/* Header Row (Name + Age + Info Button) */}
                         <div className="w-full flex items-center justify-between mb-2">
@@ -289,6 +374,67 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
                                 )}
                              </div>
 
+                             {(relationshipDetails.length > 0 || lookingForChips.length > 0) && (
+                                <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                                    <h4 className="text-white font-bold mb-3">Intenções & Vínculos</h4>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {relationshipDetails.map(detail => (
+                                            <div key={detail.label} className="bg-black/40 rounded-xl p-3 flex items-center gap-3 border border-white/5">
+                                                <detail.icon size={18} className="text-brand-primary shrink-0" />
+                                                <div>
+                                                    <p className="text-[10px] text-gray-400 uppercase font-bold">{detail.label}</p>
+                                                    <p className="text-sm text-white">{detail.value}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {lookingForChips.length > 0 && (
+                                        <div className="mt-4">
+                                            <p className="text-[10px] text-gray-400 uppercase font-bold mb-2">Buscando</p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {lookingForChips.map(target => (
+                                                    <span key={target} className="px-3 py-1 border border-white/10 rounded-full text-xs font-bold text-white bg-white/5">
+                                                        {target}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                             )}
+
+                             {lifestyleDetails.length > 0 && (
+                                <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                                    <h4 className="text-white font-bold mb-3">Rotina & Conexões</h4>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {lifestyleDetails.map(detail => (
+                                            <div key={detail.label} className="bg-black/40 rounded-xl p-3 flex items-center gap-3 border border-white/5">
+                                                <detail.icon size={18} className="text-brand-accent shrink-0" />
+                                                <div>
+                                                    <p className="text-[10px] text-gray-400 uppercase font-bold">{detail.label}</p>
+                                                    <p className="text-sm text-white">{detail.value}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                             )}
+
+                             {personalityTraits.length > 0 && (
+                                <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                                    <h4 className="text-white font-bold mb-3 flex items-center gap-2">
+                                        <Sparkles size={18} className="text-yellow-300" /> Vibrações
+                                    </h4>
+                                    <div className="flex flex-wrap gap-2">
+                                        {personalityTraits.map(trait => (
+                                            <span key={trait} className="px-3 py-1 bg-black/40 border border-white/10 rounded-full text-xs font-bold text-white">
+                                                {trait}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                             )}
+
                              {/* Mock Instagram */}
                              <div className="bg-white/5 rounded-xl p-4 border border-white/5 mt-4">
                                 <h3 className="text-white font-bold mb-3 flex items-center gap-2">
@@ -296,13 +442,13 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
                                 </h3>
                                 <div className="grid grid-cols-3 gap-2">
                                     <div className="aspect-square bg-gray-800 rounded-lg overflow-hidden">
-                                        <img src={`https://picsum.photos/200/200?random=${currentProfile.id}1`} className="w-full h-full object-cover hover:scale-110 transition-transform" />
+                                        <img src={`https://picsum.photos/200/200?random=${currentProfile.id}1`} className="w-full h-full object-cover hover:scale-110 transition-transform" onError={handleImageError} />
                                     </div>
                                     <div className="aspect-square bg-gray-800 rounded-lg overflow-hidden">
-                                        <img src={`https://picsum.photos/200/200?random=${currentProfile.id}2`} className="w-full h-full object-cover hover:scale-110 transition-transform" />
+                                        <img src={`https://picsum.photos/200/200?random=${currentProfile.id}2`} className="w-full h-full object-cover hover:scale-110 transition-transform" onError={handleImageError} />
                                     </div>
                                     <div className="aspect-square bg-gray-800 rounded-lg overflow-hidden">
-                                        <img src={`https://picsum.photos/200/200?random=${currentProfile.id}3`} className="w-full h-full object-cover hover:scale-110 transition-transform" />
+                                        <img src={`https://picsum.photos/200/200?random=${currentProfile.id}3`} className="w-full h-full object-cover hover:scale-110 transition-transform" onError={handleImageError} />
                                     </div>
                                 </div>
                                 <div className="mt-3 text-center">
@@ -317,7 +463,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
                                 </h3>
                                 <div className="flex items-center gap-3">
                                     <div className="w-12 h-12 bg-gray-800 rounded-md overflow-hidden shrink-0">
-                                        <img src="https://picsum.photos/100/100?random=music" className="w-full h-full object-cover" />
+                                        <img src="https://picsum.photos/100/100?random=music" className="w-full h-full object-cover" onError={handleImageError} />
                                     </div>
                                     <div>
                                         <p className="text-white font-medium text-sm">Best Part (feat. H.E.R.)</p>
@@ -409,7 +555,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
       )}
 
       {/* Gesture Areas Overlay - Z-Index 20 (Below buttons/info) */}
-      <div className={`absolute inset-0 z-20 flex flex-col ${isExpanded ? 'pointer-events-none' : ''}`}>
+            <div className="absolute inset-0 z-20 flex flex-col pointer-events-none">
         {!isExpanded && (
             <>
                 <div className="h-1/4 w-full" /> 

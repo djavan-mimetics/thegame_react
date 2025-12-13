@@ -1,5 +1,5 @@
 
-import { UserProfile, ChatPreview, Message, Payment, ReportTicket } from './types';
+import { UserProfile, ChatPreview, Message, Payment, ReportTicket, NotificationItem } from './types';
 
 export const TAGS_LIST = [
   'Chopinho gelado',
@@ -59,16 +59,30 @@ export const MOCK_PROFILES: UserProfile[] = [
     age: 24,
     bio: 'Designer de dia, gamer à noite. Procurando alguém para me carregar nas rankeadas.',
     distance: 3,
-    images: ['https://picsum.photos/400/600?random=1', 'https://picsum.photos/400/600?random=101'],
+    images: [
+      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=400&q=80',
+      'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
+      'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=400&q=80'
+    ],
     tags: ['Jogar videogame', 'Rock e Alterna', 'Japa'],
     rankingScore: 9.2,
     job: 'Designer UX',
     sign: 'Áries',
     height: '165 cm',
     education: 'Superior completo',
+    intention: 'Um relacionamento sério',
+    relationship: 'Monogamia',
+    family: 'Talvez um dia',
+    communication: 'Mensagens longas',
+    loveLanguage: 'Tempo de qualidade',
     drink: 'Socialmente',
     smoke: 'Não fumo',
-    pets: 'Gato'
+    pets: 'Gato',
+    exercise: 'Às vezes',
+    food: 'Onívoro',
+    sleep: 'Coruja noturna',
+    personality: ['Criativa', 'Introvertida'],
+    lookingFor: ['Homens']
   },
   {
     id: '2',
@@ -76,16 +90,30 @@ export const MOCK_PROFILES: UserProfile[] = [
     age: 27,
     bio: 'Viciada em café e entusiasta de viagens. Vamos planejar nossa próxima trip!',
     distance: 12,
-    images: ['https://picsum.photos/400/600?random=2', 'https://picsum.photos/400/600?random=102'],
+    images: [
+      'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=400&q=80',
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
+      'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=400&q=80'
+    ],
     tags: ['Tomar um café', 'Praia e água de côco', 'Vinho à dois'],
     rankingScore: 8.5,
     job: 'Gerente de Marketing',
     sign: 'Libra',
     height: '170 cm',
     education: 'Pós-graduação',
+    intention: 'Novas amizades',
     drink: 'Frequentemente',
     smoke: 'Fumo socialmente',
-    relationship: 'Monogamia'
+    relationship: 'Monogamia',
+    family: 'Não quero filhos',
+    communication: 'Chamada de vídeo',
+    loveLanguage: 'Atos de serviço',
+    pets: 'Gosta de gatos',
+    exercise: 'Às vezes',
+    food: 'Vegetariana',
+    sleep: 'Madrugadora',
+    personality: ['Extrovertida', 'Aventureira'],
+    lookingFor: ['Homens', 'Mulheres']
   },
   {
     id: '3',
@@ -93,15 +121,29 @@ export const MOCK_PROFILES: UserProfile[] = [
     age: 22,
     bio: 'Só pelas vibes. Rio de Janeiro ☀️',
     distance: 5,
-    images: ['https://picsum.photos/400/600?random=3', 'https://picsum.photos/400/600?random=103'],
+    images: [
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+      'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=400&q=80',
+      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80'
+    ],
     tags: ['Praia e água de côco', 'Boate', 'Sambinha e pagode'],
     rankingScore: 9.8,
     job: 'Estudante',
     sign: 'Leão',
     education: 'Cursando Graduação',
+    intention: 'Algo casual',
+    relationship: 'Aberto',
     drink: 'Aos fins de semana',
     smoke: 'Fumo quando bebo',
-    exercise: 'Todo dia'
+    exercise: 'Todo dia',
+    family: 'Talvez um dia',
+    communication: 'Áudio',
+    loveLanguage: 'Presentes',
+    pets: 'Amo todos',
+    food: 'Carnívoro',
+    sleep: 'Coruja noturna',
+    personality: ['Festeira', 'Carismática'],
+    lookingFor: ['Todos']
   },
   {
     id: '4',
@@ -109,14 +151,30 @@ export const MOCK_PROFILES: UserProfile[] = [
     age: 25,
     bio: 'Arquiteta. Amo brutalismo e gatos.',
     distance: 8,
-    images: ['https://picsum.photos/400/600?random=4'],
+    images: [
+      'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=400&q=80',
+      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
+      'https://images.unsplash.com/photo-1523475472560-d2df97ec485c?auto=format&fit=crop&w=400&q=80'
+    ],
     tags: ['Cinema e pipoca', 'Passear com o totó', 'Teatro'],
     rankingScore: 7.9,
     job: 'Arquiteta',
     sign: 'Virgem',
     height: '172 cm',
     pets: 'Cachorro',
-    education: 'Mestrado'
+    education: 'Mestrado',
+    intention: 'Um relacionamento sério',
+    relationship: 'Monogamia',
+    family: 'Quero filhos',
+    communication: 'Pessoalmente',
+    loveLanguage: 'Toque físico',
+    drink: 'Socialmente',
+    smoke: 'Não fumo',
+    exercise: 'Às vezes',
+    food: 'Vegetariana',
+    sleep: 'Dorme cedo',
+    personality: ['Criativa', 'Romântica'],
+    lookingFor: ['Homens']
   }
 ];
 
@@ -142,7 +200,7 @@ export const MOCK_CHATS: ChatPreview[] = [
 ];
 
 export const MOCK_MESSAGES: Message[] = [
-  { id: 'm1', senderId: '2', text: 'Oi! Tudo bem?', timestamp: '10:30', isMe: false },
+  { id: 'm1', senderId: '2', text: 'Oi! Tudo bem?', timestamp: '10:30', isMe: false, variant: 'icebreaker' },
   { id: 'm2', senderId: 'me', text: 'Tudo ótimo, só trabalhando em um app novo.', timestamp: '10:32', isMe: true },
   { id: 'm3', senderId: '2', text: 'Ah legal! Que tipo de app?', timestamp: '10:35', isMe: false },
   { id: 'm4', senderId: 'me', text: 'É um app de relacionamento chamado The Game.', timestamp: '10:40', isMe: true },
@@ -200,4 +258,36 @@ export const MOCK_REPORTS: ReportTicket[] = [
             }
         ]
     }
+];
+
+export const MOCK_NOTIFICATIONS: NotificationItem[] = [
+  {
+    id: 'n1',
+    type: 'match',
+    title: 'Novo match com Amanda!',
+    description: 'Ela curtiu seu perfil e abriu o chat. Que tal mandar um oi? 😊',
+    timestamp: 'Hoje, 09:12'
+  },
+  {
+    id: 'n2',
+    type: 'message',
+    title: 'Camila enviou uma mensagem',
+    description: '"Curti demais suas fotos na praia, bora marcar algo?"',
+    timestamp: 'Ontem, 22:47'
+  },
+  {
+    id: 'n3',
+    type: 'superlike',
+    title: 'Você recebeu um Superlike',
+    description: 'Beatriz destacou você no ranking dela. Abra para descobrir mais.',
+    timestamp: 'Ontem, 18:05'
+  },
+  {
+    id: 'n4',
+    type: 'system',
+    title: 'Lembrete de perfil',
+    description: 'Adicione mais fotos para aumentar suas chances de match em 40%.',
+    timestamp: '02/12, 11:30',
+    seen: true
+  }
 ];

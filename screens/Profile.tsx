@@ -32,11 +32,17 @@ export const Profile: React.FC<ProfileProps> = ({ onNavigate, isPremium, myProfi
             {/* Header */}
             <div className="flex justify-between items-center px-4 mb-6">
                 <h1 className="text-2xl font-bold text-white">Perfil</h1>
-                <div className="flex gap-4">
-                    <Bell size={24} className="text-gray-400" />
+                <div className="flex gap-3">
+                    <button
+                        onClick={() => onNavigate(AppScreen.NOTIFICATIONS)}
+                        className="p-2 rounded-full border border-white/10 text-gray-400 hover:text-white hover:border-white/40 transition-colors"
+                        aria-label="Abrir notificações"
+                    >
+                        <Bell size={20} />
+                    </button>
                     {/* Settings now redirects to SECURITY as requested */}
-                    <button onClick={() => onNavigate(AppScreen.SECURITY)}>
-                        <SettingsIcon size={24} className="text-gray-400 hover:text-white transition-colors" />
+                    <button onClick={() => onNavigate(AppScreen.SECURITY)} className="p-2 rounded-full border border-white/10 text-gray-400 hover:text-white hover:border-white/40 transition-colors" aria-label="Abrir configurações">
+                        <SettingsIcon size={20} />
                     </button>
                 </div>
             </div>

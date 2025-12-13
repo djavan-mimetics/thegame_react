@@ -19,16 +19,21 @@ export const Welcome: React.FC<WelcomeProps> = ({ onNavigate }) => {
 
       <div className="z-10 w-full max-w-sm flex flex-col items-center text-center gap-10">
         <div className="flex flex-col items-center gap-6">
-          <img 
-            src={logoQD} 
-            alt="Logomarca The Game" 
-            className="w-48 h-48 object-contain drop-shadow-[0_0_25px_rgba(233,30,99,0.45)]" 
-          />
-          <p className="text-gray-200 text-lg font-medium">
+          <div className="relative w-48 h-48 flex items-center justify-center">
+            <div className="welcome-blur welcome-blur-one" aria-hidden="true" />
+            <div className="welcome-blur welcome-blur-two" aria-hidden="true" />
+            <img 
+              src={logoQD} 
+              alt="Logomarca The Game" 
+              className="relative z-10 w-64 h-64 object-contain drop-shadow-[0_0_25px_rgba(233,30,99,0.45)]" 
+            />
+          </div>
+          <p className="text-gray-200 text-lg font-small">
             Venha aonde o Jogo é Jogado.
           </p>
         </div>
 
+        <div className="mt-auto pb-1"></div>
         <div className="w-full space-y-4">
           <Button fullWidth onClick={() => onNavigate(AppScreen.RULES)}>
             Começar
