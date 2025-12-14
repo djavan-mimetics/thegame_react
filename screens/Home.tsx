@@ -192,7 +192,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
       {/* Floating Header - Z-Index 50 to be on top of gesture overlay */}
             <div className="absolute top-0 left-0 right-0 z-50 p-4 pt-6 flex justify-between items-start bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
                 <div className="flex items-center gap-2 pointer-events-auto bg-black/40 px-3 py-1 rounded-full border border-white/5">
-                        <img src={logoMark} alt="The Game" className="h-6 w-auto object-contain" />
+                        <img src={`${logoMark}?v=${__APP_BUILD_ID__}`} alt="The Game" className="h-6 w-auto object-contain" />
                 </div>
         
         {/* Active Tag Button */}

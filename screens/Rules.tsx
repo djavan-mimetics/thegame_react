@@ -15,7 +15,7 @@ export const Rules: React.FC<RulesProps> = ({ onNavigate }) => {
             <div className="flex-1 flex flex-col justify-center">
                 <div className="flex justify-center mb-8">
                     <img 
-                        src={logoQD} 
+                        src={`${logoQD}?v=${__APP_BUILD_ID__}`} 
                         alt="Logomarca The Game" 
                         className="w-24 h-24 object-contain drop-shadow-[0_0_20px_rgba(233,30,99,0.35)]" 
                     />

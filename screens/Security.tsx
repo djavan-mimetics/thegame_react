@@ -53,7 +53,7 @@ export const Security: React.FC<SecurityProps> = ({ onNavigate }) => {
           {/* Brand Footer */}
           <div className="mt-auto pb-1"></div>
           <div className="flex flex-col items-center gap-2 text-center">
-            <img src={logoQD} alt="The Game" className="w-20 h-20 object-contain drop-shadow-lg" />
+            <img src={`${logoQD}?v=${__APP_BUILD_ID__}`} alt="The Game" className="w-20 h-20 object-contain drop-shadow-lg" />
           </div>
         </div>
 

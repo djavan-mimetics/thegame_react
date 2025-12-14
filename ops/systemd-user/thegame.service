@@ -1,0 +1,20 @@
+[Unit]
+Description=TheGame (Vite preview) - user service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/dev/thegame
+
+Environment=NODE_ENV=production
+Environment=PATH=__NODE_BIN__:/usr/bin:/bin
+# Put environment variables in ~/.config/thegame/thegame.env (optional)
+EnvironmentFile=%h/.config/thegame/thegame.env
+
+ExecStart=__NPM_PATH__ run start
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target

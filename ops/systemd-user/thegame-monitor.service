@@ -1,0 +1,6 @@
+[Unit]
+Description=TheGame monitor (user)
+
+[Service]
+Type=oneshot
+ExecStart=/home/dev/thegame/ops/scripts/check-services-user.sh

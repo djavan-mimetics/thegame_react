@@ -1,0 +1,8 @@
+[Unit]
+Description=TheGame service monitor (auto-restart)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/dev/thegame/ops/scripts/check-services.sh

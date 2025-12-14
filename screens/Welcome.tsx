@@ -23,7 +23,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onNavigate }) => {
             <div className="welcome-blur welcome-blur-one" aria-hidden="true" />
             <div className="welcome-blur welcome-blur-two" aria-hidden="true" />
             <img 
-              src={logoQD} 
+              src={`${logoQD}?v=${__APP_BUILD_ID__}`} 
               alt="Logomarca The Game" 
               className="relative z-10 w-64 h-64 object-contain drop-shadow-[0_0_25px_rgba(233,30,99,0.45)]" 
             />

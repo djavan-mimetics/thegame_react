@@ -140,7 +140,7 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
 
       <footer className="py-6 flex justify-center border-t border-white/5">
         <img 
-            src={logoQD}
+            src={`${logoQD}?v=${__APP_BUILD_ID__}`}
             alt="Logomarca The Game"
             className="w-16 h-16 object-contain opacity-90"
         />
