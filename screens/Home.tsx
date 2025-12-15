@@ -4,6 +4,7 @@ import { MOCK_PROFILES, TAGS_LIST } from '../constants';
 import { UserProfile, AppScreen } from '../types';
 import { Heart, HeartCrack, MapPin, Info, X, ChevronDown, Instagram, Music, Ruler, Moon, GraduationCap, Wine, Cigarette, Dog, Dumbbell, Briefcase, Search, Globe, Lightbulb, Target, Users, Baby, MessageCircle, HeartHandshake, Utensils, Bed, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import logoMark from '../src/img/logo.png';
+import { Modal } from '../components/Modal';
 
 interface HomeProps {
     onNavigate?: (screen: AppScreen) => void;
@@ -520,39 +521,43 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
       </div>
 
       {/* Tag Selection Modal - Z-Index 60 to be above everything */}
-      {isTagModalOpen && (
-        <div className="absolute inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className="bg-[#120516] w-full max-w-xs rounded-3xl border border-white/10 p-6 relative shadow-2xl overflow-hidden max-h-[80vh] flex flex-col">
-                <button 
-                    onClick={() => setIsTagModalOpen(false)}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
-                >
-                    <X size={24} />
-                </button>
-                <div className="mb-4">
-                    <h3 className="text-xl font-bold text-white">Escolha sua Vibe</h3>
-                    <p className="text-gray-400 text-sm mt-1">Como você está se sentindo hoje?</p>
-                </div>
-                <div className="flex-1 overflow-y-auto no-scrollbar">
-                    <div className="flex flex-wrap gap-2.5 pb-4">
-                        {TAGS_LIST.map(tag => (
-                            <button
-                                key={tag}
-                                onClick={() => { setMyTag(tag); setIsTagModalOpen(false); }}
-                                className={`px-4 py-2 rounded-full text-sm font-bold border transition-all duration-200 ${
-                                    myTag === tag 
-                                    ? 'bg-brand-primary border-brand-primary text-white shadow-lg shadow-brand-primary/25' 
-                                    : 'bg-transparent border-gray-700 text-gray-400 hover:border-brand-primary hover:text-brand-primary'
-                                }`}
-                            >
-                                #{tag}
-                            </button>
-                        ))}
+            <Modal
+                open={isTagModalOpen}
+                overlayClassName="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+            >
+                <div className="bg-[#120516] w-full max-w-xs rounded-3xl border border-white/10 p-6 relative shadow-2xl overflow-hidden max-h-[80vh] flex flex-col">
+                    <button
+                        onClick={() => setIsTagModalOpen(false)}
+                        className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
+                    >
+                        <X size={24} />
+                    </button>
+                    <div className="mb-4">
+                        <h3 className="text-xl font-bold text-white">Escolha sua Vibe</h3>
+                        <p className="text-gray-400 text-sm mt-1">Como você está se sentindo hoje?</p>
+                    </div>
+                    <div className="flex-1 overflow-y-auto no-scrollbar">
+                        <div className="flex flex-wrap gap-2.5 pb-4">
+                            {TAGS_LIST.map((tag) => (
+                                <button
+                                    key={tag}
+                                    onClick={() => {
+                                        setMyTag(tag);
+                                        setIsTagModalOpen(false);
+                                    }}
+                                    className={`px-4 py-2 rounded-full text-sm font-bold border transition-all duration-200 ${
+                                        myTag === tag
+                                            ? 'bg-brand-primary border-brand-primary text-white shadow-lg shadow-brand-primary/25'
+                                            : 'bg-transparent border-gray-700 text-gray-400 hover:border-brand-primary hover:text-brand-primary'
+                                    }`}
+                                >
+                                    #{tag}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-      )}
+            </Modal>
 
       {/* Gesture Areas Overlay - Z-Index 20 (Below buttons/info) */}
             <div className="absolute inset-0 z-20 flex flex-col pointer-events-none">

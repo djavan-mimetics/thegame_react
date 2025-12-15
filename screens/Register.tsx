@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AppScreen } from '../types';
 import { Button } from '../components/Button';
+import { Modal } from '../components/Modal';
 import { ArrowLeft, Mail, Facebook, ChevronRight, Camera, Check, User, Calendar, MapPin, Heart, Plus, ChevronDown, RotateCcw, X, Image as ImageIcon, Trash2, Eye, EyeOff } from 'lucide-react';
 import { TAGS_LIST, LOCATIONS, GENDER_OPTIONS, LOOKING_FOR_OPTIONS, RELATIONSHIP_OPTIONS } from '../constants';
 import logoQD from '../src/img/logo_qd.png';
@@ -415,18 +416,19 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
             </WizardLayout>
 
             {/* Photo Source Modal */}
-            {isSourceModalOpen && (
-                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="w-full max-w-md bg-[#1e1e1e] rounded-3xl p-6 space-y-4 animate-in fade-in duration-200 shadow-2xl border border-white/10">
-                        <div className="flex justify-between items-center mb-2">
-                            <h3 className="text-lg font-bold text-white">Adicionar Foto</h3>
-                            <button onClick={() => setIsSourceModalOpen(false)} className="p-2 bg-gray-800 rounded-full text-white"><X size={20} /></button>
-                        </div>
-                        <button onClick={() => triggerFileInput('camera')} className="w-full py-4 bg-gray-800 rounded-xl flex items-center gap-4 px-6 hover:bg-gray-700 transition-colors"><Camera size={24} className="text-brand-primary" /><span className="text-white font-bold">Tirar Foto</span></button>
-                        <button onClick={() => triggerFileInput('gallery')} className="w-full py-4 bg-gray-800 rounded-xl flex items-center gap-4 px-6 hover:bg-gray-700 transition-colors"><ImageIcon size={24} className="text-brand-primary" /><span className="text-white font-bold">Escolher da Galeria</span></button>
+            <Modal
+                open={isSourceModalOpen}
+                overlayClassName="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            >
+                <div className="w-full max-w-md bg-[#1e1e1e] rounded-3xl p-6 space-y-4 animate-in fade-in duration-200 shadow-2xl border border-white/10">
+                    <div className="flex justify-between items-center mb-2">
+                        <h3 className="text-lg font-bold text-white">Adicionar Foto</h3>
+                        <button onClick={() => setIsSourceModalOpen(false)} className="p-2 bg-gray-800 rounded-full text-white"><X size={20} /></button>
                     </div>
+                    <button onClick={() => triggerFileInput('camera')} className="w-full py-4 bg-gray-800 rounded-xl flex items-center gap-4 px-6 hover:bg-gray-700 transition-colors"><Camera size={24} className="text-brand-primary" /><span className="text-white font-bold">Tirar Foto</span></button>
+                    <button onClick={() => triggerFileInput('gallery')} className="w-full py-4 bg-gray-800 rounded-xl flex items-center gap-4 px-6 hover:bg-gray-700 transition-colors"><ImageIcon size={24} className="text-brand-primary" /><span className="text-white font-bold">Escolher da Galeria</span></button>
                 </div>
-            )}
+            </Modal>
 
             {/* Editor Overlay */}
             {isEditorOpen && tempImageSrc && (
@@ -551,7 +553,7 @@ const PhotoEditor = ({ imageSrc, onSave, onCancel }: { imageSrc: string, onSave:
     };
 
     return (
-        <div className="absolute inset-0 z-50 bg-black flex flex-col">
+        <Modal open overlayClassName="fixed inset-0 z-50 bg-black flex flex-col">
             <div className="flex justify-between items-center p-4 z-20">
                 <button onClick={onCancel} className="p-2 text-white"><X /></button>
                 <h3 className="text-white font-bold">Editar Foto</h3>
@@ -619,6 +621,6 @@ const PhotoEditor = ({ imageSrc, onSave, onCancel }: { imageSrc: string, onSave:
                     <button onClick={handleSave} className="flex-1 py-3 bg-brand-primary rounded-xl text-white font-bold">Confirmar</button>
                 </div>
             </div>
-        </div>
+        </Modal>
     );
 };

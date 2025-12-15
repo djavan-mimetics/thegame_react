@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { MOCK_CHATS, MOCK_MESSAGES, MOCK_PROFILES } from '../constants';
 import { ChatPreview, AppScreen, Message } from '../types';
 import { Search, ChevronLeft, Send, Shield, X, ChevronRight, Heart } from 'lucide-react';
+import { Modal } from '../components/Modal';
 
 const MY_INTEREST_TAGS = ['Jogar videogame', 'Praia e água de côco', 'Tomar um café', 'Netflix', 'Vinho à dois'];
 const gradientBubbleClass = 'bg-gradient-to-r from-brand-primary to-brand-accent text-white shadow-lg border border-white/10';
@@ -225,92 +226,94 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
                 </div>
 
                 {/* Profile Photo Gallery Modal */}
-                {isGalleryOpen && galleryImages.length > 0 && (
-                    <div className="fixed inset-0 z-50 bg-black flex flex-col animate-in fade-in duration-200">
-                        <button 
-                            onClick={() => setIsGalleryOpen(false)}
-                            className="absolute top-10 right-4 z-20 p-2 bg-black/50 rounded-full text-white hover:bg-black/80"
-                        >
-                            <X size={24} />
-                        </button>
+                <Modal
+                    open={isGalleryOpen && galleryImages.length > 0}
+                    overlayClassName="fixed inset-0 z-50 bg-black flex flex-col animate-in fade-in duration-200"
+                >
+                    <button 
+                        onClick={() => setIsGalleryOpen(false)}
+                        className="absolute top-10 right-4 z-20 p-2 bg-black/50 rounded-full text-white hover:bg-black/80"
+                    >
+                        <X size={24} />
+                    </button>
+                    
+                    <div className="flex-1 relative flex items-center justify-center bg-black">
+                        <img 
+                            src={galleryImages[currentImageIndex]} 
+                            alt={`Foto ${currentImageIndex + 1}`} 
+                            className="w-full h-full object-contain"
+                        />
                         
-                        <div className="flex-1 relative flex items-center justify-center bg-black">
-                            <img 
-                                src={galleryImages[currentImageIndex]} 
-                                alt={`Foto ${currentImageIndex + 1}`} 
-                                className="w-full h-full object-contain"
-                            />
-                            
-                            {/* Navigation Arrows */}
-                            {galleryImages.length > 1 && (
-                                <>
-                                    <button 
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setCurrentImageIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
-                                        }}
-                                        className="absolute left-2 top-1/2 -translate-y-1/2 p-3 text-white/70 hover:text-white"
-                                    >
-                                        <ChevronLeft size={40} />
-                                    </button>
-                                    <button 
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setCurrentImageIndex((prev) => (prev + 1) % galleryImages.length);
-                                        }}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-3 text-white/70 hover:text-white"
-                                    >
-                                        <ChevronRight size={40} />
-                                    </button>
-                                </>
-                            )}
-
-                            {/* Indicators */}
-                            <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-2">
-                                {galleryImages.map((_, idx) => (
-                                    <div 
-                                        key={idx} 
-                                        className={`w-2 h-2 rounded-full transition-all ${
-                                            idx === currentImageIndex ? 'bg-white w-4' : 'bg-white/30'
-                                        }`}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {isComplimentModalOpen && selectedChat && (
-                    <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center px-4 animate-in fade-in duration-200">
-                        <div className="bg-[#150515] w-full max-w-sm rounded-3xl border border-white/10 p-6 shadow-2xl space-y-5">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs uppercase text-gray-500 tracking-[0.3em]">Elogio rápido</p>
-                                    <h3 className="text-white text-xl font-bold">Mande um carinho</h3>
-                                </div>
-                                <button onClick={() => setIsComplimentModalOpen(false)} className="text-gray-400 hover:text-white">
-                                    <X size={20} />
+                        {/* Navigation Arrows */}
+                        {galleryImages.length > 1 && (
+                            <>
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setCurrentImageIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
+                                    }}
+                                    className="absolute left-2 top-1/2 -translate-y-1/2 p-3 text-white/70 hover:text-white"
+                                >
+                                    <ChevronLeft size={40} />
                                 </button>
-                            </div>
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setCurrentImageIndex((prev) => (prev + 1) % galleryImages.length);
+                                    }}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-3 text-white/70 hover:text-white"
+                                >
+                                    <ChevronRight size={40} />
+                                </button>
+                            </>
+                        )}
 
-                            <div className="space-y-3 max-h-[45vh] overflow-y-auto pr-1 no-scrollbar">
-                                {complimentOptions.map((compliment, idx) => (
-                                    <button 
-                                        key={`${compliment}-${idx}`}
-                                        onClick={() => handleSendCompliment(compliment)}
-                                        className={`${gradientBubbleClass} rounded-2xl w-full text-left px-4 py-3 text-sm font-semibold hover:brightness-110 transition-all`}
-                                    >
-                                        {compliment}
-                                    </button>
-                                ))}
-                            </div>
-
-                            <p className="text-[11px] text-gray-500 text-center">
-                                Escolha um elogio para iniciar com boa energia. Ele aparecerá na conversa com o mesmo destaque que o icebreaker.
-                            </p>
+                        {/* Indicators */}
+                        <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-2">
+                            {galleryImages.map((_, idx) => (
+                                <div 
+                                    key={idx} 
+                                    className={`w-2 h-2 rounded-full transition-all ${
+                                        idx === currentImageIndex ? 'bg-white w-4' : 'bg-white/30'
+                                    }`}
+                                />
+                            ))}
                         </div>
                     </div>
-                )}
+                </Modal>
+
+                <Modal
+                    open={isComplimentModalOpen && !!selectedChat}
+                    overlayClassName="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center px-4 animate-in fade-in duration-200"
+                >
+                    <div className="bg-[#150515] w-full max-w-sm rounded-3xl border border-white/10 p-6 shadow-2xl space-y-5">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-xs uppercase text-gray-500 tracking-[0.3em]">Elogio rápido</p>
+                                <h3 className="text-white text-xl font-bold">Mande um carinho</h3>
+                            </div>
+                            <button onClick={() => setIsComplimentModalOpen(false)} className="text-gray-400 hover:text-white">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-3 max-h-[45vh] overflow-y-auto pr-1 no-scrollbar">
+                            {complimentOptions.map((compliment, idx) => (
+                                <button 
+                                    key={`${compliment}-${idx}`}
+                                    onClick={() => handleSendCompliment(compliment)}
+                                    className={`${gradientBubbleClass} rounded-2xl w-full text-left px-4 py-3 text-sm font-semibold hover:brightness-110 transition-all`}
+                                >
+                                    {compliment}
+                                </button>
+                            ))}
+                        </div>
+
+                        <p className="text-[11px] text-gray-500 text-center">
+                            Escolha um elogio para iniciar com boa energia. Ele aparecerá na conversa com o mesmo destaque que o icebreaker.
+                        </p>
+                    </div>
+                </Modal>
             </div>
         );
     }

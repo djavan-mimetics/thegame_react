@@ -4,6 +4,7 @@ import { AppScreen } from '../types';
 import { LOCATIONS } from '../constants';
 import { ArrowLeft, Check, X, MapPin, Zap, ChevronDown, Lock, CreditCard, Calendar, User, Receipt, History } from 'lucide-react';
 import { Button } from '../components/Button';
+import { Modal } from '../components/Modal';
 
 interface PremiumProps {
   onNavigate: (screen: AppScreen) => void;
@@ -190,68 +191,76 @@ export const Premium: React.FC<PremiumProps> = ({ onNavigate, isPremium, setPrem
       </div>
 
       {/* Location Selection Modal (Reused Logic) */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className="bg-[#1e1e1e] w-full max-w-md rounded-3xl border border-white/10 p-6 relative shadow-2xl max-h-[80vh] flex flex-col">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold text-white">Alterar Localização</h3>
-                    <button 
-                        onClick={() => setIsModalOpen(false)}
-                        className="p-2 bg-gray-800 rounded-full text-gray-400 hover:text-white transition-colors"
+            <Modal
+                open={isModalOpen}
+                overlayClassName="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+            >
+                <div className="bg-[#1e1e1e] w-full max-w-md rounded-3xl border border-white/10 p-6 relative shadow-2xl max-h-[80vh] flex flex-col">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-xl font-bold text-white">Alterar Localização</h3>
+                        <button
+                            onClick={() => setIsModalOpen(false)}
+                            className="p-2 bg-gray-800 rounded-full text-gray-400 hover:text-white transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
+
+                    <div className="space-y-4 mb-8">
+                        {/* State Selector */}
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Estado</label>
+                            <div className="relative">
+                                <select
+                                    value={selectedState}
+                                    onChange={(e) => handleStateChange(e.target.value)}
+                                    className="w-full bg-brand-card border border-white/10 rounded-xl p-4 text-white appearance-none focus:border-brand-primary outline-none cursor-pointer"
+                                >
+                                    {Object.keys(LOCATIONS).map((state) => (
+                                        <option key={state} value={state}>
+                                            {state}
+                                        </option>
+                                    ))}
+                                </select>
+                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={20} />
+                            </div>
+                        </div>
+
+                        {/* City Selector */}
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Cidade</label>
+                            <div className="relative">
+                                <select
+                                    value={selectedCity}
+                                    onChange={(e) => setSelectedCity(e.target.value)}
+                                    className="w-full bg-brand-card border border-white/10 rounded-xl p-4 text-white appearance-none focus:border-brand-primary outline-none cursor-pointer"
+                                >
+                                    {LOCATIONS[selectedState] &&
+                                        LOCATIONS[selectedState].map((city: string) => (
+                                            <option key={city} value={city}>
+                                                {city}
+                                            </option>
+                                        ))}
+                                </select>
+                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={20} />
+                            </div>
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={handleSaveLocation}
+                        className="w-full py-4 bg-brand-primary rounded-xl font-bold text-white shadow-lg shadow-brand-primary/25 hover:brightness-110 transition-all active:scale-95"
                     >
-                        <X size={20} />
+                        Confirmar
                     </button>
                 </div>
-                
-                <div className="space-y-4 mb-8">
-                    {/* State Selector */}
-                    <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Estado</label>
-                        <div className="relative">
-                            <select 
-                                value={selectedState}
-                                onChange={(e) => handleStateChange(e.target.value)}
-                                className="w-full bg-brand-card border border-white/10 rounded-xl p-4 text-white appearance-none focus:border-brand-primary outline-none cursor-pointer"
-                            >
-                                {Object.keys(LOCATIONS).map(state => (
-                                    <option key={state} value={state}>{state}</option>
-                                ))}
-                            </select>
-                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={20} />
-                        </div>
-                    </div>
-
-                    {/* City Selector */}
-                    <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Cidade</label>
-                         <div className="relative">
-                            <select 
-                                value={selectedCity}
-                                onChange={(e) => setSelectedCity(e.target.value)}
-                                className="w-full bg-brand-card border border-white/10 rounded-xl p-4 text-white appearance-none focus:border-brand-primary outline-none cursor-pointer"
-                            >
-                                {LOCATIONS[selectedState] && LOCATIONS[selectedState].map((city: string) => (
-                                    <option key={city} value={city}>{city}</option>
-                                ))}
-                            </select>
-                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={20} />
-                        </div>
-                    </div>
-                </div>
-
-                <button 
-                    onClick={handleSaveLocation}
-                    className="w-full py-4 bg-brand-primary rounded-xl font-bold text-white shadow-lg shadow-brand-primary/25 hover:brightness-110 transition-all active:scale-95"
-                >
-                    Confirmar
-                </button>
-            </div>
-        </div>
-      )}
+            </Modal>
 
       {/* Checkout Modal */}
-        {isCheckoutOpen && (
-            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-center items-center p-4 animate-in fade-in duration-200">
+        <Modal
+            open={isCheckoutOpen}
+            overlayClassName="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-center items-center p-4 animate-in fade-in duration-200"
+        >
             <div className="bg-[#120516] w-full max-w-md rounded-3xl border border-brand-primary/20 p-6 relative shadow-2xl max-h-[90vh] flex flex-col">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-bold text-white">Assinar Premium</h3>
@@ -374,8 +383,7 @@ export const Premium: React.FC<PremiumProps> = ({ onNavigate, isPremium, setPrem
                     </div>
                 </form>
             </div>
-         </div>
-      )}
+                </Modal>
 
     </div>
   );

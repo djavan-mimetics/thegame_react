@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AppScreen, MyProfile } from '../types';
 import { TAGS_LIST, LOCATIONS } from '../constants';
 import { ChevronLeft, Plus, ChevronRight, Moon, GraduationCap, Users, User, Ruler, HeartHandshake, Smile, MessageCircle, Heart, Dog, Wine, Cigarette, Dumbbell, Pizza, X, Check, Sun, Trash2, Camera, Image as ImageIcon, RotateCcw, Facebook, Mail, Trophy, Calendar, MapPin, ChevronDown } from 'lucide-react';
+import { Modal } from '../components/Modal';
 
 interface EditProfileProps {
   onNavigate: (screen: AppScreen) => void;
@@ -94,6 +95,10 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
   const [activeModal, setActiveModal] = useState<keyof typeof profileData | 'interests' | 'gender' | 'lookingFor' | null>(null);
   const [tempInputValue, setTempInputValue] = useState("");
   const [interests, setInterests] = useState<string[]>(['Sambinha e pagode', 'Netflix', 'Japa']);
+
+    // Location (custom modals to avoid native <select> sheets)
+    const [isStateModalOpen, setIsStateModalOpen] = useState(false);
+    const [isCityModalOpen, setIsCityModalOpen] = useState(false);
 
   // Derived state for cities based on selected state
   const availableCities = myProfile.state ? LOCATIONS[myProfile.state as keyof typeof LOCATIONS] || [] : [];
@@ -391,19 +396,13 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
                     <div className="space-y-2 w-1/3">
                         <label className="text-white font-bold text-sm ml-1">Estado</label>
                         <div className="relative">
-                            <select 
-                                value={myProfile.state} 
-                                onChange={(e) => {
-                                    updateProfile('state', e.target.value);
-                                    updateProfile('city', ''); // Reset city on state change
-                                }}
-                                className="w-full bg-brand-card rounded-xl border border-white/10 p-3 text-center text-white text-sm focus:outline-none focus:border-brand-primary transition-colors appearance-none uppercase"
+                            <button
+                                type="button"
+                                onClick={() => setIsStateModalOpen(true)}
+                                className="w-full bg-brand-card rounded-xl border border-white/10 p-3 text-center text-white text-sm focus:outline-none focus:border-brand-primary transition-colors uppercase"
                             >
-                                <option value="">UF</option>
-                                {Object.keys(LOCATIONS).map(st => (
-                                    <option key={st} value={st}>{st}</option>
-                                ))}
-                            </select>
+                                {myProfile.state || 'UF'}
+                            </button>
                             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
                         </div>
                     </div>
@@ -413,17 +412,19 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
                         <label className="text-white font-bold text-sm ml-1">Cidade</label>
                         <div className="relative">
                             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
-                            <select 
-                                value={myProfile.city}
-                                onChange={(e) => updateProfile('city', e.target.value)}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (!myProfile.state) return;
+                                    setIsCityModalOpen(true);
+                                }}
+                                className={`w-full bg-brand-card rounded-xl border border-white/10 p-3 pl-10 pr-8 text-left text-white text-sm focus:outline-none focus:border-brand-primary transition-colors ${
+                                    !myProfile.state ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
                                 disabled={!myProfile.state}
-                                className="w-full bg-brand-card rounded-xl border border-white/10 p-3 pl-10 pr-8 text-white text-sm focus:outline-none focus:border-brand-primary transition-colors appearance-none disabled:opacity-50"
                             >
-                                <option value="">Selecione</option>
-                                {availableCities.map(city => (
-                                    <option key={city} value={city}>{city}</option>
-                                ))}
-                            </select>
+                                {myProfile.city || 'Selecione'}
+                            </button>
                             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
                         </div>
                     </div>
@@ -519,31 +520,140 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
       </div>
 
       {/* Generic Selection Modal */}
-      {activeModal && (
-                <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className="bg-[#1e1e1e] w-full max-w-md rounded-3xl border border-white/10 p-6 relative shadow-2xl max-h-[80vh] flex flex-col">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold text-white capitalize">{LABEL_MAP[activeModal as string] || activeModal}</h3>
-                    <button onClick={() => setActiveModal(null)} className="p-2 bg-gray-800 rounded-full text-gray-400 hover:text-white transition-colors"><X size={20} /></button>
+            <Modal
+                open={!!activeModal}
+                overlayClassName="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 animate-in fade-in duration-200"
+            >
+                <div className="bg-[#1e1e1e] w-full max-w-md rounded-3xl border border-white/10 p-6 relative shadow-2xl max-h-[80vh] flex flex-col">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-xl font-bold text-white capitalize">{LABEL_MAP[activeModal as string] || activeModal}</h3>
+                        <button
+                            onClick={() => setActiveModal(null)}
+                            className="p-2 bg-gray-800 rounded-full text-gray-400 hover:text-white transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
+                    <div className="overflow-y-auto no-scrollbar flex-1">{renderModalContent()}</div>
                 </div>
-                <div className="overflow-y-auto no-scrollbar flex-1">{renderModalContent()}</div>
-            </div>
-        </div>
-      )}
+            </Modal>
+
+            {/* State Selection Modal */}
+            <Modal
+                open={isStateModalOpen}
+                overlayClassName="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 animate-in fade-in duration-200"
+            >
+                <div className="bg-[#1e1e1e] w-full max-w-md rounded-3xl border border-white/10 p-6 relative shadow-2xl max-h-[80vh] flex flex-col">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-xl font-bold text-white">Estado</h3>
+                        <button
+                            onClick={() => setIsStateModalOpen(false)}
+                            className="p-2 bg-gray-800 rounded-full text-gray-400 hover:text-white transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
+
+                    <div className="overflow-y-auto no-scrollbar flex-1">
+                        <div className="space-y-1">
+                            {Object.keys(LOCATIONS).map((st) => (
+                                <button
+                                    key={st}
+                                    onClick={() => {
+                                        updateProfile('state', st);
+                                        updateProfile('city', '');
+                                        setIsStateModalOpen(false);
+                                    }}
+                                    className={`w-full text-left p-4 rounded-xl flex justify-between items-center ${
+                                        myProfile.state === st
+                                            ? 'bg-brand-primary/20 text-brand-primary font-bold border border-brand-primary/50'
+                                            : 'text-gray-300 hover:bg-white/5'
+                                    }`}
+                                >
+                                    {st}
+                                    {myProfile.state === st && <Check size={18} />}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* City Selection Modal */}
+            <Modal
+                open={isCityModalOpen}
+                overlayClassName="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 animate-in fade-in duration-200"
+            >
+                <div className="bg-[#1e1e1e] w-full max-w-md rounded-3xl border border-white/10 p-6 relative shadow-2xl max-h-[80vh] flex flex-col">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-xl font-bold text-white">Cidade</h3>
+                        <button
+                            onClick={() => setIsCityModalOpen(false)}
+                            className="p-2 bg-gray-800 rounded-full text-gray-400 hover:text-white transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
+
+                    <div className="overflow-y-auto no-scrollbar flex-1">
+                        {availableCities.length === 0 ? (
+                            <p className="text-gray-400 text-sm">Selecione um estado primeiro.</p>
+                        ) : (
+                            <div className="space-y-1">
+                                {availableCities.map((city) => (
+                                    <button
+                                        key={city}
+                                        onClick={() => {
+                                            updateProfile('city', city);
+                                            setIsCityModalOpen(false);
+                                        }}
+                                        className={`w-full text-left p-4 rounded-xl flex justify-between items-center ${
+                                            myProfile.city === city
+                                                ? 'bg-brand-primary/20 text-brand-primary font-bold border border-brand-primary/50'
+                                                : 'text-gray-300 hover:bg-white/5'
+                                        }`}
+                                    >
+                                        {city}
+                                        {myProfile.city === city && <Check size={18} />}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </Modal>
 
       {/* Photo Source Modal & Editor would be here (omitted for brevity, assume reusable component or same logic) */}
-      {isSourceModalOpen && (
-                    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-                        <div className="w-full max-w-md bg-[#1e1e1e] rounded-3xl p-6 space-y-4 animate-in fade-in duration-200 shadow-2xl border border-white/10">
-                <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-lg font-bold text-white">Adicionar Foto</h3>
-                    <button onClick={() => setIsSourceModalOpen(false)} className="p-2 bg-gray-800 rounded-full text-white"><X size={20} /></button>
+            <Modal
+                open={isSourceModalOpen}
+                overlayClassName="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+            >
+                <div className="w-full max-w-md bg-[#1e1e1e] rounded-3xl p-6 space-y-4 animate-in fade-in duration-200 shadow-2xl border border-white/10">
+                    <div className="flex justify-between items-center mb-2">
+                        <h3 className="text-lg font-bold text-white">Adicionar Foto</h3>
+                        <button
+                            onClick={() => setIsSourceModalOpen(false)}
+                            className="p-2 bg-gray-800 rounded-full text-white"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
+                    <button
+                        onClick={() => triggerFileInput('camera')}
+                        className="w-full py-4 bg-gray-800 rounded-xl flex items-center gap-4 px-6 hover:bg-gray-700 transition-colors"
+                    >
+                        <Camera size={24} className="text-brand-primary" />
+                        <span className="text-white font-bold">Tirar Foto</span>
+                    </button>
+                    <button
+                        onClick={() => triggerFileInput('gallery')}
+                        className="w-full py-4 bg-gray-800 rounded-xl flex items-center gap-4 px-6 hover:bg-gray-700 transition-colors"
+                    >
+                        <ImageIcon size={24} className="text-brand-primary" />
+                        <span className="text-white font-bold">Escolher da Galeria</span>
+                    </button>
                 </div>
-                <button onClick={() => triggerFileInput('camera')} className="w-full py-4 bg-gray-800 rounded-xl flex items-center gap-4 px-6 hover:bg-gray-700 transition-colors"><Camera size={24} className="text-brand-primary" /><span className="text-white font-bold">Tirar Foto</span></button>
-                <button onClick={() => triggerFileInput('gallery')} className="w-full py-4 bg-gray-800 rounded-xl flex items-center gap-4 px-6 hover:bg-gray-700 transition-colors"><ImageIcon size={24} className="text-brand-primary" /><span className="text-white font-bold">Escolher da Galeria</span></button>
-            </div>
-        </div>
-      )}
+            </Modal>
 
       {/* Editor Overlay */}
       {isEditorOpen && tempImageSrc && (
@@ -641,7 +751,7 @@ const PhotoEditor = ({ imageSrc, onSave, onCancel }: { imageSrc: string, onSave:
     };
 
     return (
-        <div className="absolute inset-0 z-50 bg-black flex flex-col">
+        <Modal open overlayClassName="fixed inset-0 z-50 bg-black flex flex-col">
             <div className="flex justify-between items-center p-4 z-20">
                 <button onClick={onCancel} className="p-2 text-white"><X /></button>
                 <h3 className="text-white font-bold">Editar Foto</h3>
@@ -705,7 +815,7 @@ const PhotoEditor = ({ imageSrc, onSave, onCancel }: { imageSrc: string, onSave:
                     <button onClick={handleSave} className="flex-1 py-3 bg-brand-primary rounded-xl text-white font-bold">Confirmar</button>
                 </div>
             </div>
-        </div>
+        </Modal>
     );
 };
 

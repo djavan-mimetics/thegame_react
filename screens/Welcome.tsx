@@ -29,7 +29,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onNavigate }) => {
             />
           </div>
           <p className="text-gray-200 text-lg font-small">
-            Venha aonde o Jogo é Jogado.
+            O app onde o jogo é jogado.
           </p>
         </div>
 

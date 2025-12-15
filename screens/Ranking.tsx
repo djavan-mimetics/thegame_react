@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { RANKING_DATA, LOCATIONS } from '../constants';
 import { Trophy, MapPin, X, ChevronDown } from 'lucide-react';
+import { Modal } from '../components/Modal';
 
 export const Ranking: React.FC = () => {
   // Default location state (simulating logged user profile)
@@ -93,8 +94,10 @@ export const Ranking: React.FC = () => {
       </div>
 
     {/* Location Selection Modal */}
-        {isModalOpen && (
-            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-center items-center px-4 py-6 animate-in fade-in duration-200">
+        <Modal
+            open={isModalOpen}
+            overlayClassName="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-center items-center px-4 py-6 animate-in fade-in duration-200"
+        >
                 <div className="bg-[#1e1e1e] w-full max-w-md rounded-3xl border border-white/10 p-6 relative shadow-2xl max-h-[90vh] flex flex-col">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-bold text-white">Alterar Localização</h3>
@@ -149,8 +152,7 @@ export const Ranking: React.FC = () => {
                     Confirmar
                 </button>
             </div>
-        </div>
-      )}
+                </Modal>
     </div>
   );
 };
