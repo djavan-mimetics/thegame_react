@@ -191,8 +191,8 @@ export const Premium: React.FC<PremiumProps> = ({ onNavigate, isPremium, setPrem
 
       {/* Location Selection Modal (Reused Logic) */}
       {isModalOpen && (
-        <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
-            <div className="bg-[#1e1e1e] w-full max-w-md rounded-t-3xl sm:rounded-3xl border-t sm:border border-white/10 p-6 relative shadow-2xl max-h-[80vh] flex flex-col">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="bg-[#1e1e1e] w-full max-w-md rounded-3xl border border-white/10 p-6 relative shadow-2xl max-h-[80vh] flex flex-col">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-bold text-white">Alterar Localização</h3>
                     <button 
@@ -251,8 +251,8 @@ export const Premium: React.FC<PremiumProps> = ({ onNavigate, isPremium, setPrem
 
       {/* Checkout Modal */}
         {isCheckoutOpen && (
-            <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-center items-start sm:items-center px-0 sm:px-4 py-8 sm:py-4 animate-in fade-in duration-200">
-            <div className="bg-[#120516] w-full max-w-md rounded-t-3xl sm:rounded-3xl border-t sm:border border-brand-primary/20 p-6 relative shadow-2xl h-[90vh] flex flex-col">
+            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-center items-center p-4 animate-in fade-in duration-200">
+            <div className="bg-[#120516] w-full max-w-md rounded-3xl border border-brand-primary/20 p-6 relative shadow-2xl max-h-[90vh] flex flex-col">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-bold text-white">Assinar Premium</h3>
                     <button 

@@ -1,0 +1,5 @@
+/*
+  Fallback stylesheet.
+  Some older/cached HTML revisions referenced /index.css; keeping this file prevents MIME errors
+  when a proxy/CDN/browser requests it.
+*/

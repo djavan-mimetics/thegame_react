@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AppScreen, MyProfile } from '../types';
 import { TAGS_LIST, LOCATIONS } from '../constants';
 import { ChevronLeft, Plus, ChevronRight, Moon, GraduationCap, Users, User, Ruler, HeartHandshake, Smile, MessageCircle, Heart, Dog, Wine, Cigarette, Dumbbell, Pizza, X, Check, Sun, Trash2, Camera, Image as ImageIcon, RotateCcw, Facebook, Mail, Trophy, Calendar, MapPin, ChevronDown } from 'lucide-react';
@@ -520,8 +520,8 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
 
       {/* Generic Selection Modal */}
       {activeModal && (
-        <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
-            <div className="bg-[#1e1e1e] w-full max-w-md rounded-t-3xl sm:rounded-3xl border-t sm:border border-white/10 p-6 relative shadow-2xl max-h-[80vh] flex flex-col">
+                <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="bg-[#1e1e1e] w-full max-w-md rounded-3xl border border-white/10 p-6 relative shadow-2xl max-h-[80vh] flex flex-col">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-bold text-white capitalize">{LABEL_MAP[activeModal as string] || activeModal}</h3>
                     <button onClick={() => setActiveModal(null)} className="p-2 bg-gray-800 rounded-full text-gray-400 hover:text-white transition-colors"><X size={20} /></button>
@@ -533,8 +533,8 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
 
       {/* Photo Source Modal & Editor would be here (omitted for brevity, assume reusable component or same logic) */}
       {isSourceModalOpen && (
-          <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end justify-center">
-            <div className="w-full bg-[#1e1e1e] rounded-t-3xl p-6 pb-10 space-y-4 animate-in slide-in-from-bottom duration-300">
+                    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+                        <div className="w-full max-w-md bg-[#1e1e1e] rounded-3xl p-6 space-y-4 animate-in fade-in duration-200 shadow-2xl border border-white/10">
                 <div className="flex justify-between items-center mb-2">
                     <h3 className="text-lg font-bold text-white">Adicionar Foto</h3>
                     <button onClick={() => setIsSourceModalOpen(false)} className="p-2 bg-gray-800 rounded-full text-white"><X size={20} /></button>
@@ -547,23 +547,166 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
 
       {/* Editor Overlay */}
       {isEditorOpen && tempImageSrc && (
-          <div className="absolute inset-0 z-50 bg-black flex flex-col">
-            <div className="flex justify-between items-center p-4 z-20">
-                <button onClick={() => { setIsEditorOpen(false); setTempImageSrc(null); }} className="p-2 text-white"><X /></button>
-                <h3 className="text-white font-bold">Editar Foto</h3>
-                <button onClick={() => handleSaveCroppedImage(tempImageSrc)} className="p-2 text-brand-primary font-bold">Salvar</button>
-            </div>
-            {/* Editor placeholder content for this full file replacement */}
-            <div className="flex-1 bg-gray-900 flex items-center justify-center">
-                 <img src={tempImageSrc} className="max-w-full max-h-full object-contain" />
-            </div>
-             <div className="p-4 bg-black text-center text-gray-500 text-xs">
-                (Editor funcionalidade completa disponível no componente PhotoEditor original)
-            </div>
-          </div>
+        <PhotoEditor
+          imageSrc={tempImageSrc}
+          onSave={handleSaveCroppedImage}
+          onCancel={() => {
+            setIsEditorOpen(false);
+            setTempImageSrc(null);
+          }}
+        />
       )}
     </div>
   );
+};
+
+// Robust Frame-Based Photo Editor (same behavior as Register)
+const PhotoEditor = ({ imageSrc, onSave, onCancel }: { imageSrc: string, onSave: (base64: string) => void, onCancel: () => void }) => {
+    const frameRef = useRef<HTMLDivElement>(null);
+    const [scale, setScale] = useState(1);
+    const [pan, setPan] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [lastPos, setLastPos] = useState({ x: 0, y: 0 });
+    const imageRef = useRef<HTMLImageElement>(new Image());
+    const [imgLoaded, setImgLoaded] = useState(false);
+    
+    useEffect(() => {
+        const img = imageRef.current;
+        img.src = imageSrc;
+        img.onload = () => setImgLoaded(true);
+    }, [imageSrc]);
+
+    const handlePointerDown = (e: React.PointerEvent) => {
+        setIsDragging(true);
+        setLastPos({ x: e.clientX, y: e.clientY });
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    };
+
+    const handlePointerMove = (e: React.PointerEvent) => {
+        if (!isDragging) return;
+        const dx = e.clientX - lastPos.x;
+        const dy = e.clientY - lastPos.y;
+        setPan(p => ({ x: p.x + dx, y: p.y + dy }));
+        setLastPos({ x: e.clientX, y: e.clientY });
+    };
+
+    const handlePointerUp = () => setIsDragging(false);
+
+    const handleSave = () => {
+        if (!frameRef.current || !imageRef.current) return;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 1080;
+        canvas.height = 1920;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, 1080, 1920);
+
+        const frameRect = frameRef.current.getBoundingClientRect();
+        const visibleWidth = frameRect.width;
+        const visibleHeight = frameRect.height;
+        const widthRatio = canvas.width / visibleWidth;
+        const heightRatio = canvas.height / visibleHeight;
+
+        const img = imageRef.current;
+        const imgAspect = img.naturalWidth / img.naturalHeight;
+        const frameAspect = visibleWidth / visibleHeight;
+
+        let baseWidth: number;
+        let baseHeight: number;
+        if (imgAspect > frameAspect) {
+            baseHeight = visibleHeight;
+            baseWidth = visibleHeight * imgAspect;
+        } else {
+            baseWidth = visibleWidth;
+            baseHeight = visibleWidth / imgAspect;
+        }
+
+        baseWidth *= scale;
+        baseHeight *= scale;
+
+        const offsetX = (visibleWidth - baseWidth) / 2 + pan.x;
+        const offsetY = (visibleHeight - baseHeight) / 2 + pan.y;
+
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.scale(widthRatio, heightRatio);
+        ctx.translate(offsetX, offsetY);
+        ctx.drawImage(img, -baseWidth / 2, -baseHeight / 2, baseWidth, baseHeight);
+        ctx.restore();
+
+        onSave(canvas.toDataURL('image/jpeg', 0.9));
+    };
+
+    return (
+        <div className="absolute inset-0 z-50 bg-black flex flex-col">
+            <div className="flex justify-between items-center p-4 z-20">
+                <button onClick={onCancel} className="p-2 text-white"><X /></button>
+                <h3 className="text-white font-bold">Editar Foto</h3>
+                <button onClick={handleSave} className="p-2 text-brand-primary font-bold">Salvar</button>
+            </div>
+            
+            <div className="flex-1 relative overflow-hidden flex items-center justify-center bg-gray-900">
+                <div 
+                    ref={frameRef}
+                    className="relative overflow-hidden shadow-2xl border-2 border-brand-primary touch-none"
+                    style={{ 
+                        aspectRatio: '9/16', 
+                        height: '80%', 
+                        width: 'auto',
+                        maxWidth: '90%' 
+                    }}
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerLeave={handlePointerUp}
+                >
+                    {imgLoaded ? (
+                        <img 
+                            src={imageSrc} 
+                            style={{ 
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'contain',
+                                transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
+                                transformOrigin: 'center',
+                                touchAction: 'none',
+                                maxWidth: 'none',
+                                maxHeight: 'none'
+                            }}
+                            draggable={false}
+                        />
+                    ) : <div className="text-white text-center p-4">Carregando...</div>}
+                </div>
+                
+                <div className="absolute bottom-4 left-0 right-0 text-center pointer-events-none">
+                    <p className="text-xs text-gray-500">Arraste para mover • Use o slider para zoom</p>
+                </div>
+            </div>
+
+            <div className="p-6 bg-black space-y-4">
+                <div className="flex justify-between items-center px-2">
+                    <span className="text-xs text-gray-400">Zoom</span>
+                    <span className="text-xs text-white font-bold">{Math.round(scale * 100)}%</span>
+                </div>
+                <input 
+                    type="range" 
+                    min="1" 
+                    max="3.5" 
+                    step="0.1" 
+                    value={scale} 
+                    onChange={e => setScale(parseFloat(e.target.value))} 
+                    className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-brand-primary"
+                />
+                <div className="flex justify-between gap-4 pt-2">
+                    <button onClick={() => { setScale(1); setPan({x:0, y:0}); }} className="flex-1 py-3 bg-gray-800 rounded-xl text-white font-bold flex items-center justify-center gap-2"><RotateCcw size={16} /> Redefinir</button>
+                    <button onClick={handleSave} className="flex-1 py-3 bg-brand-primary rounded-xl text-white font-bold">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 const ListItem = ({ label, value, icon: Icon, onClick }: { label: string, value: string, icon: any, onClick: () => void }) => (

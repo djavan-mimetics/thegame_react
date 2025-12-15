@@ -416,8 +416,8 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
 
             {/* Photo Source Modal */}
             {isSourceModalOpen && (
-                <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end justify-center">
-                    <div className="w-full bg-[#1e1e1e] rounded-t-3xl p-6 pb-10 space-y-4 animate-in slide-in-from-bottom duration-300">
+                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="w-full max-w-md bg-[#1e1e1e] rounded-3xl p-6 space-y-4 animate-in fade-in duration-200 shadow-2xl border border-white/10">
                         <div className="flex justify-between items-center mb-2">
                             <h3 className="text-lg font-bold text-white">Adicionar Foto</h3>
                             <button onClick={() => setIsSourceModalOpen(false)} className="p-2 bg-gray-800 rounded-full text-white"><X size={20} /></button>
