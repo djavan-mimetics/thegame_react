@@ -32,7 +32,7 @@ export const Ranking: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-start mb-6 pt-4">
         <div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight">Ranking</h1>
+            <h1 className="text-2xl font-bold text-white">Ranking</h1>
             <div className="flex items-center gap-1 text-brand-primary mt-1">
                 <MapPin size={14} fill="currentColor" />
                 <span className="text-sm font-bold">{location.city}, {location.state}</span>

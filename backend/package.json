@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsup src/server.ts --format esm --dts false --sourcemap",
+    "build": "tsup src/server.ts --format esm --sourcemap",
     "start": "node dist/server.js",
     "lint": "eslint .",
     "test": "vitest run",

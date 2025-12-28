@@ -23,15 +23,44 @@ EOF
   sudo chmod 0640 "$ETC_DIR/thegame.env"
 fi
 
+# Create backend env file if missing
+if [[ ! -f "$ETC_DIR/thegame-backend.env" ]]; then
+  sudo tee "$ETC_DIR/thegame-backend.env" >/dev/null <<'EOF'
+# Environment variables for the backend API service
+# Copy from /home/dev/thegame/backend/.env.example and fill secrets.
+
+# Server
+PORT=8080
+HOST=0.0.0.0
+CORS_ORIGIN=*
+LOG_LEVEL=info
+
+# Database
+DATABASE_URL=postgres://thegame:thegame@localhost:5432/thegame
+
+# Auth
+JWT_ACCESS_SECRET=
+JWT_ACCESS_TTL_SECONDS=900
+REFRESH_TTL_DAYS=30
+PASSWORD_RESET_TTL_MINUTES=30
+EOF
+  sudo chmod 0640 "$ETC_DIR/thegame-backend.env"
+fi
+
 sudo cp "$PROJECT_DIR/ops/systemd/thegame.service" "$SYSTEMD_DIR/thegame.service"
 sudo sed -i "s#__NPM_PATH__#${NPM_PATH//\/\\}#g" "$SYSTEMD_DIR/thegame.service"
 sudo sed -i "s#__NODE_BIN__#${NODE_BIN//\/\\}#g" "$SYSTEMD_DIR/thegame.service"
+
+sudo cp "$PROJECT_DIR/ops/systemd/thegame-backend.service" "$SYSTEMD_DIR/thegame-backend.service"
+sudo sed -i "s#__NODE_BIN__#${NODE_BIN//\/\\}#g" "$SYSTEMD_DIR/thegame-backend.service"
 sudo cp "$PROJECT_DIR/ops/systemd/thegame-monitor.service" "$SYSTEMD_DIR/thegame-monitor.service"
 sudo cp "$PROJECT_DIR/ops/systemd/thegame-monitor.timer" "$SYSTEMD_DIR/thegame-monitor.timer"
 
 sudo systemctl daemon-reload
 sudo systemctl enable --now thegame.service
+sudo systemctl enable --now thegame-backend.service
 sudo systemctl enable --now thegame-monitor.timer
 
 sudo systemctl --no-pager --full status thegame.service || true
+sudo systemctl --no-pager --full status thegame-backend.service || true
 sudo systemctl --no-pager --full status thegame-monitor.timer || true

@@ -11,7 +11,7 @@ interface ReportListProps {
 
 export const ReportList: React.FC<ReportListProps> = ({ onNavigate, reports, onSelectReport }) => {
   return (
-    <div className="h-full flex flex-col bg-brand-dark overflow-y-auto no-scrollbar">
+    <div className="min-h-screen min-h-[100dvh] flex flex-col bg-brand-dark overflow-y-auto no-scrollbar">
       {/* Header */}
       <div className="flex items-center p-4 sticky top-0 bg-brand-dark z-20 border-b border-white/5">
         <button onClick={() => onNavigate(AppScreen.SECURITY)} className="text-gray-400 p-2 -ml-2 hover:text-white transition-colors">

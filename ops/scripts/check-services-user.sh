@@ -3,6 +3,7 @@ set -euo pipefail
 
 services=(
   thegame.service
+  thegame-backend.service
 )
 
 for svc in "${services[@]}"; do

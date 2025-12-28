@@ -101,7 +101,7 @@ const App: React.FC = () => {
   ].includes(currentScreen);
 
   return (
-    <div className="h-full w-full max-w-md mx-auto bg-black shadow-2xl overflow-hidden relative">
+    <div className="min-h-screen min-h-[100dvh] w-full max-w-md mx-auto bg-brand-dark shadow-2xl overflow-hidden relative">
       {currentScreen === AppScreen.WELCOME && <Welcome onNavigate={navigate} />}
       {currentScreen === AppScreen.RULES && <Rules onNavigate={navigate} />}
       {currentScreen === AppScreen.LOGIN && <Login onNavigate={navigate} />}

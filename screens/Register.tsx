@@ -513,41 +513,45 @@ const PhotoEditor = ({ imageSrc, onSave, onCancel }: { imageSrc: string, onSave:
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
+        ctx.imageSmoothingEnabled = true;
+        // @ts-expect-error older browsers may not have this
+        ctx.imageSmoothingQuality = 'high';
+
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, 1080, 1920);
 
         const frameRect = frameRef.current.getBoundingClientRect();
-        const visibleWidth = frameRect.width;
-        const visibleHeight = frameRect.height;
-        const widthRatio = canvas.width / visibleWidth;
-        const heightRatio = canvas.height / visibleHeight;
+        const frameWidth = frameRect.width;
+        const frameHeight = frameRect.height;
+        if (frameWidth <= 0 || frameHeight <= 0) return;
 
         const img = imageRef.current;
         const imgAspect = img.naturalWidth / img.naturalHeight;
-        const frameAspect = visibleWidth / visibleHeight;
+        const frameAspect = frameWidth / frameHeight;
 
         let baseWidth: number;
         let baseHeight: number;
         if (imgAspect > frameAspect) {
-            baseHeight = visibleHeight;
-            baseWidth = visibleHeight * imgAspect;
+            // Wider image: fit by width (contain)
+            baseWidth = frameWidth;
+            baseHeight = frameWidth / imgAspect;
         } else {
-            baseWidth = visibleWidth;
-            baseHeight = visibleWidth / imgAspect;
+            // Taller image: fit by height (contain)
+            baseHeight = frameHeight;
+            baseWidth = frameHeight * imgAspect;
         }
 
         baseWidth *= scale;
         baseHeight *= scale;
 
-        const offsetX = (visibleWidth - baseWidth) / 2 + pan.x;
-        const offsetY = (visibleHeight - baseHeight) / 2 + pan.y;
+        // Position inside the visible 9:16 frame (matches the on-screen transform).
+        const x = (frameWidth - baseWidth) / 2 + pan.x;
+        const y = (frameHeight - baseHeight) / 2 + pan.y;
 
-        ctx.save();
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.scale(widthRatio, heightRatio);
-        ctx.translate(offsetX, offsetY);
-        ctx.drawImage(img, -baseWidth / 2, -baseHeight / 2, baseWidth, baseHeight);
-        ctx.restore();
+        const sx = canvas.width / frameWidth;
+        const sy = canvas.height / frameHeight;
+
+        ctx.drawImage(img, x * sx, y * sy, baseWidth * sx, baseHeight * sy);
 
         onSave(canvas.toDataURL('image/jpeg', 0.9));
     };
@@ -568,9 +572,9 @@ const PhotoEditor = ({ imageSrc, onSave, onCancel }: { imageSrc: string, onSave:
                     className="relative overflow-hidden shadow-2xl border-2 border-brand-primary touch-none"
                     style={{ 
                         aspectRatio: '9/16', 
-                        height: '80%', 
-                        width: 'auto',
-                        maxWidth: '90%' 
+                        width: '100%',
+                        maxWidth: '360px',
+                        maxHeight: '55vh'
                     }}
                     onPointerDown={handlePointerDown}
                     onPointerMove={handlePointerMove}
@@ -602,7 +606,7 @@ const PhotoEditor = ({ imageSrc, onSave, onCancel }: { imageSrc: string, onSave:
             </div>
 
             {/* Controls */}
-            <div className="p-6 bg-black space-y-4">
+            <div className="p-4 bg-black space-y-3">
                 <div className="flex justify-between items-center px-2">
                     <span className="text-xs text-gray-400">Zoom</span>
                     <span className="text-xs text-white font-bold">{Math.round(scale * 100)}%</span>
@@ -616,9 +620,9 @@ const PhotoEditor = ({ imageSrc, onSave, onCancel }: { imageSrc: string, onSave:
                     onChange={e => setScale(parseFloat(e.target.value))} 
                     className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-brand-primary"
                 />
-                <div className="flex justify-between gap-4 pt-2">
-                    <button onClick={() => { setScale(1); setPan({x:0, y:0}); }} className="flex-1 py-3 bg-gray-800 rounded-xl text-white font-bold flex items-center justify-center gap-2"><RotateCcw size={16} /> Redefinir</button>
-                    <button onClick={handleSave} className="flex-1 py-3 bg-brand-primary rounded-xl text-white font-bold">Confirmar</button>
+                <div className="flex justify-between gap-3 pt-1">
+                    <button onClick={() => { setScale(1); setPan({x:0, y:0}); }} className="flex-1 py-2.5 bg-gray-800 rounded-xl text-white font-bold flex items-center justify-center gap-2"><RotateCcw size={16} /> Redefinir</button>
+                    <button onClick={handleSave} className="flex-1 py-2.5 bg-brand-primary rounded-xl text-white font-bold">Confirmar</button>
                 </div>
             </div>
         </Modal>

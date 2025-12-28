@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { MOCK_PROFILES, TAGS_LIST } from '../constants';
 import { UserProfile, AppScreen } from '../types';
-import { Heart, HeartCrack, MapPin, Info, X, ChevronDown, Instagram, Music, Ruler, Moon, GraduationCap, Wine, Cigarette, Dog, Dumbbell, Briefcase, Search, Globe, Lightbulb, Target, Users, Baby, MessageCircle, HeartHandshake, Utensils, Bed, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, HeartCrack, MapPin, Info, X, ChevronDown, Ruler, Moon, GraduationCap, Wine, Cigarette, Dog, Dumbbell, Briefcase, Search, Globe, Lightbulb, Target, Users, Baby, MessageCircle, HeartHandshake, Utensils, Bed, ChevronLeft, ChevronRight } from 'lucide-react';
 import logoMark from '../src/img/logo.png';
 import { Modal } from '../components/Modal';
 
@@ -166,7 +166,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
   }
 
   return (
-    <div className="min-h-screen w-full relative bg-black overflow-hidden">
+    <div className="min-h-screen min-h-[100dvh] w-full relative bg-brand-dark overflow-hidden">
         {/* Custom Animations Styles */}
         <style>{`
             @keyframes float {
@@ -423,9 +423,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
 
                              {personalityTraits.length > 0 && (
                                 <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
-                                    <h4 className="text-white font-bold mb-3 flex items-center gap-2">
-                                        <Sparkles size={18} className="text-yellow-300" /> Vibrações
-                                    </h4>
+                                    <h4 className="text-white font-bold mb-3">Personalidade</h4>
                                     <div className="flex flex-wrap gap-2">
                                         {personalityTraits.map(trait => (
                                             <span key={trait} className="px-3 py-1 bg-black/40 border border-white/10 rounded-full text-xs font-bold text-white">
@@ -435,43 +433,6 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
                                     </div>
                                 </div>
                              )}
-
-                             {/* Mock Instagram */}
-                             <div className="bg-white/5 rounded-xl p-4 border border-white/5 mt-4">
-                                <h3 className="text-white font-bold mb-3 flex items-center gap-2">
-                                    <Instagram size={18} className="text-pink-500" /> Instagram
-                                </h3>
-                                <div className="grid grid-cols-3 gap-2">
-                                    <div className="aspect-square bg-gray-800 rounded-lg overflow-hidden">
-                                        <img src={`https://picsum.photos/200/200?random=${currentProfile.id}1`} className="w-full h-full object-cover hover:scale-110 transition-transform" onError={handleImageError} />
-                                    </div>
-                                    <div className="aspect-square bg-gray-800 rounded-lg overflow-hidden">
-                                        <img src={`https://picsum.photos/200/200?random=${currentProfile.id}2`} className="w-full h-full object-cover hover:scale-110 transition-transform" onError={handleImageError} />
-                                    </div>
-                                    <div className="aspect-square bg-gray-800 rounded-lg overflow-hidden">
-                                        <img src={`https://picsum.photos/200/200?random=${currentProfile.id}3`} className="w-full h-full object-cover hover:scale-110 transition-transform" onError={handleImageError} />
-                                    </div>
-                                </div>
-                                <div className="mt-3 text-center">
-                                    <span className="text-xs font-bold text-gray-400 cursor-pointer hover:text-white">@usuario_insta</span>
-                                </div>
-                             </div>
-
-                             {/* Mock Spotify */}
-                             <div className="bg-white/5 rounded-xl p-4 border border-white/5">
-                                <h3 className="text-white font-bold mb-3 flex items-center gap-2">
-                                    <Music size={18} className="text-green-500" /> Minha Vibe
-                                </h3>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 bg-gray-800 rounded-md overflow-hidden shrink-0">
-                                        <img src="https://picsum.photos/100/100?random=music" className="w-full h-full object-cover" onError={handleImageError} />
-                                    </div>
-                                    <div>
-                                        <p className="text-white font-medium text-sm">Best Part (feat. H.E.R.)</p>
-                                        <p className="text-gray-400 text-xs">Daniel Caesar</p>
-                                    </div>
-                                </div>
-                             </div>
 
                              <div className="pb-32 text-center">
                                 <button onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }} className="text-gray-500 text-sm font-bold uppercase tracking-wider hover:text-white transition-colors">

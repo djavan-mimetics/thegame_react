@@ -54,6 +54,9 @@ const OPTIONS: Record<string, string[]> = {
   lookingFor: ['Homens', 'Mulheres', 'Todos']
 };
 
+const MODAL_OVERLAY = 'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-center items-center px-4 py-6 animate-in fade-in duration-200';
+const MODAL_CONTAINER = 'bg-[#1e1e1e] w-full max-w-md rounded-3xl border border-white/10 p-6 relative shadow-2xl max-h-[90vh] flex flex-col';
+
 export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile, updateProfile, completion }) => {
   // --- State ---
   const [smartPhotos, setSmartPhotos] = useState(false);
@@ -522,9 +525,9 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
       {/* Generic Selection Modal */}
             <Modal
                 open={!!activeModal}
-                overlayClassName="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 animate-in fade-in duration-200"
+                overlayClassName={MODAL_OVERLAY}
             >
-                <div className="bg-[#1e1e1e] w-full max-w-md rounded-3xl border border-white/10 p-6 relative shadow-2xl max-h-[80vh] flex flex-col">
+                <div className={`${MODAL_CONTAINER} overflow-y-auto`}>
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-xl font-bold text-white capitalize">{LABEL_MAP[activeModal as string] || activeModal}</h3>
                         <button
@@ -541,9 +544,9 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
             {/* State Selection Modal */}
             <Modal
                 open={isStateModalOpen}
-                overlayClassName="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 animate-in fade-in duration-200"
+                overlayClassName={MODAL_OVERLAY}
             >
-                <div className="bg-[#1e1e1e] w-full max-w-md rounded-3xl border border-white/10 p-6 relative shadow-2xl max-h-[80vh] flex flex-col">
+                <div className={`${MODAL_CONTAINER} overflow-y-auto`}>
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-xl font-bold text-white">Estado</h3>
                         <button
@@ -582,9 +585,9 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
             {/* City Selection Modal */}
             <Modal
                 open={isCityModalOpen}
-                overlayClassName="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 animate-in fade-in duration-200"
+                overlayClassName={MODAL_OVERLAY}
             >
-                <div className="bg-[#1e1e1e] w-full max-w-md rounded-3xl border border-white/10 p-6 relative shadow-2xl max-h-[80vh] flex flex-col">
+                <div className={`${MODAL_CONTAINER} overflow-y-auto`}>
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-xl font-bold text-white">Cidade</h3>
                         <button
@@ -626,9 +629,9 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
       {/* Photo Source Modal & Editor would be here (omitted for brevity, assume reusable component or same logic) */}
             <Modal
                 open={isSourceModalOpen}
-                overlayClassName="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+                overlayClassName={MODAL_OVERLAY}
             >
-                <div className="w-full max-w-md bg-[#1e1e1e] rounded-3xl p-6 space-y-4 animate-in fade-in duration-200 shadow-2xl border border-white/10">
+                <div className={`${MODAL_CONTAINER} max-h-[80vh] overflow-y-auto space-y-4`}>
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="text-lg font-bold text-white">Adicionar Foto</h3>
                         <button
@@ -711,108 +714,114 @@ const PhotoEditor = ({ imageSrc, onSave, onCancel }: { imageSrc: string, onSave:
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
+        ctx.imageSmoothingEnabled = true;
+        // @ts-expect-error older browsers may not have this
+        ctx.imageSmoothingQuality = 'high';
+
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, 1080, 1920);
 
         const frameRect = frameRef.current.getBoundingClientRect();
-        const visibleWidth = frameRect.width;
-        const visibleHeight = frameRect.height;
-        const widthRatio = canvas.width / visibleWidth;
-        const heightRatio = canvas.height / visibleHeight;
+        const frameWidth = frameRect.width;
+        const frameHeight = frameRect.height;
+        if (frameWidth <= 0 || frameHeight <= 0) return;
 
         const img = imageRef.current;
         const imgAspect = img.naturalWidth / img.naturalHeight;
-        const frameAspect = visibleWidth / visibleHeight;
+        const frameAspect = frameWidth / frameHeight;
 
         let baseWidth: number;
         let baseHeight: number;
         if (imgAspect > frameAspect) {
-            baseHeight = visibleHeight;
-            baseWidth = visibleHeight * imgAspect;
+            // Wider image: fit by width (contain)
+            baseWidth = frameWidth;
+            baseHeight = frameWidth / imgAspect;
         } else {
-            baseWidth = visibleWidth;
-            baseHeight = visibleWidth / imgAspect;
+            // Taller image: fit by height (contain)
+            baseHeight = frameHeight;
+            baseWidth = frameHeight * imgAspect;
         }
 
         baseWidth *= scale;
         baseHeight *= scale;
 
-        const offsetX = (visibleWidth - baseWidth) / 2 + pan.x;
-        const offsetY = (visibleHeight - baseHeight) / 2 + pan.y;
+        // Position inside the visible 9:16 frame (matches the on-screen transform).
+        const x = (frameWidth - baseWidth) / 2 + pan.x;
+        const y = (frameHeight - baseHeight) / 2 + pan.y;
 
-        ctx.save();
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.scale(widthRatio, heightRatio);
-        ctx.translate(offsetX, offsetY);
-        ctx.drawImage(img, -baseWidth / 2, -baseHeight / 2, baseWidth, baseHeight);
-        ctx.restore();
+        const sx = canvas.width / frameWidth;
+        const sy = canvas.height / frameHeight;
+
+        ctx.drawImage(img, x * sx, y * sy, baseWidth * sx, baseHeight * sy);
 
         onSave(canvas.toDataURL('image/jpeg', 0.9));
     };
 
     return (
-        <Modal open overlayClassName="fixed inset-0 z-50 bg-black flex flex-col">
-            <div className="flex justify-between items-center p-4 z-20">
-                <button onClick={onCancel} className="p-2 text-white"><X /></button>
-                <h3 className="text-white font-bold">Editar Foto</h3>
-                <button onClick={handleSave} className="p-2 text-brand-primary font-bold">Salvar</button>
-            </div>
-            
-            <div className="flex-1 relative overflow-hidden flex items-center justify-center bg-gray-900">
-                <div 
-                    ref={frameRef}
-                    className="relative overflow-hidden shadow-2xl border-2 border-brand-primary touch-none"
-                    style={{ 
-                        aspectRatio: '9/16', 
-                        height: '80%', 
-                        width: 'auto',
-                        maxWidth: '90%' 
-                    }}
-                    onPointerDown={handlePointerDown}
-                    onPointerMove={handlePointerMove}
-                    onPointerUp={handlePointerUp}
-                    onPointerLeave={handlePointerUp}
-                >
-                    {imgLoaded ? (
-                        <img 
-                            src={imageSrc} 
-                            style={{ 
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'contain',
-                                transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
-                                transformOrigin: 'center',
-                                touchAction: 'none',
-                                maxWidth: 'none',
-                                maxHeight: 'none'
-                            }}
-                            draggable={false}
-                        />
-                    ) : <div className="text-white text-center p-4">Carregando...</div>}
+        <Modal open overlayClassName={MODAL_OVERLAY}>
+            <div className="w-full max-w-[420px] bg-black rounded-2xl border border-white/10 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+                <div className="flex justify-between items-center p-4">
+                    <button onClick={onCancel} className="p-2 text-white"><X /></button>
+                    <h3 className="text-white font-bold">Editar Foto</h3>
+                    <button onClick={handleSave} className="p-2 text-brand-primary font-bold">Salvar</button>
                 </div>
                 
-                <div className="absolute bottom-4 left-0 right-0 text-center pointer-events-none">
-                    <p className="text-xs text-gray-500">Arraste para mover • Use o slider para zoom</p>
+                <div className="relative bg-gray-900 flex items-center justify-center px-3 pb-3">
+                    <div 
+                        ref={frameRef}
+                        className="relative overflow-hidden shadow-2xl border-2 border-brand-primary touch-none"
+                        style={{ 
+                            aspectRatio: '9/16', 
+                            width: '100%',
+                            maxWidth: '360px',
+                            maxHeight: '55vh'
+                        }}
+                        onPointerDown={handlePointerDown}
+                        onPointerMove={handlePointerMove}
+                        onPointerUp={handlePointerUp}
+                        onPointerLeave={handlePointerUp}
+                    >
+                        {imgLoaded ? (
+                            <img 
+                                src={imageSrc} 
+                                style={{ 
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'contain',
+                                    transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
+                                    transformOrigin: 'center',
+                                    touchAction: 'none',
+                                    maxWidth: 'none',
+                                    maxHeight: 'none'
+                                }}
+                                draggable={false}
+                            />
+                        ) : <div className="text-white text-center p-4">Carregando...</div>}
+                    </div>
+                    
+                    <div className="absolute bottom-2 left-0 right-0 text-center pointer-events-none">
+                        <p className="text-[11px] text-gray-400">Arraste para mover • Use o slider para zoom</p>
+                    </div>
                 </div>
-            </div>
 
-            <div className="p-6 bg-black space-y-4">
-                <div className="flex justify-between items-center px-2">
-                    <span className="text-xs text-gray-400">Zoom</span>
-                    <span className="text-xs text-white font-bold">{Math.round(scale * 100)}%</span>
-                </div>
-                <input 
-                    type="range" 
-                    min="1" 
-                    max="3.5" 
-                    step="0.1" 
-                    value={scale} 
-                    onChange={e => setScale(parseFloat(e.target.value))} 
-                    className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-brand-primary"
-                />
-                <div className="flex justify-between gap-4 pt-2">
-                    <button onClick={() => { setScale(1); setPan({x:0, y:0}); }} className="flex-1 py-3 bg-gray-800 rounded-xl text-white font-bold flex items-center justify-center gap-2"><RotateCcw size={16} /> Redefinir</button>
-                    <button onClick={handleSave} className="flex-1 py-3 bg-brand-primary rounded-xl text-white font-bold">Confirmar</button>
+                <div className="p-4 bg-black space-y-3">
+                    <div className="flex justify-between items-center px-1">
+                        <span className="text-xs text-gray-400">Zoom</span>
+                        <span className="text-xs text-white font-bold">{Math.round(scale * 100)}%</span>
+                    </div>
+                    <input 
+                        type="range" 
+                        min="1" 
+                        max="3.5" 
+                        step="0.1" 
+                        value={scale} 
+                        onChange={e => setScale(parseFloat(e.target.value))} 
+                        className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-brand-primary"
+                    />
+                    <div className="flex justify-between gap-3 pt-1">
+                        <button onClick={() => { setScale(1); setPan({x:0, y:0}); }} className="flex-1 py-2.5 bg-gray-800 rounded-xl text-white font-bold flex items-center justify-center gap-2"><RotateCcw size={16} /> Redefinir</button>
+                        <button onClick={handleSave} className="flex-1 py-2.5 bg-brand-primary rounded-xl text-white font-bold">Confirmar</button>
+                    </div>
                 </div>
             </div>
         </Modal>

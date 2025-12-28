@@ -56,3 +56,16 @@ cd /home/dev/thegame
 chmod +x ops/scripts/restart-server-user.sh
 ./ops/scripts/restart-server-user.sh
 ```
+
+## Troubleshooting: `/index.css` MIME `text/html`
+
+Se o navegador mostrar:
+"A folha de estilo https://.../index.css não foi carregada porque seu tipo MIME, 'text/html', não é 'text/css'",
+isso quase sempre significa que o *reverse proxy/CDN* está devolvendo o `index.html` (fallback SPA) para a rota `/index.css`.
+
+O projeto já inclui um fallback em `public/index.css` (gera `dist/index.css`). Verifique no servidor:
+
+- `curl -I https://app.thegamebrasil.com.br/index.css` (deve retornar `Content-Type: text/css`)
+- confirme que `dist/index.css` existe e está sendo servido/publicado
+
+Se você usa Nginx na frente, veja o exemplo em `ops/nginx/app.thegamebrasil.com.br.conf`.

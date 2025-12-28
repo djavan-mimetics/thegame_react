@@ -4,6 +4,7 @@ import { MOCK_CHATS, MOCK_MESSAGES, MOCK_PROFILES } from '../constants';
 import { ChatPreview, AppScreen, Message } from '../types';
 import { Search, ChevronLeft, Send, Shield, X, ChevronRight, Heart } from 'lucide-react';
 import { Modal } from '../components/Modal';
+import appIcon from '../src/img/icon1024.png';
 
 const MY_INTEREST_TAGS = ['Jogar videogame', 'Praia e água de côco', 'Tomar um café', 'Netflix', 'Vinho à dois'];
 const gradientBubbleClass = 'bg-gradient-to-r from-brand-primary to-brand-accent text-white shadow-lg border border-white/10';
@@ -84,17 +85,17 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
         setIsGalleryOpen(false);
     }, [selectedChat]);
 
-    const appendMessage = (text: string, variant?: Message['variant']) => {
+    const appendMessage = (text: string, variant?: Message['variant'], fromApp = false) => {
         if (!selectedChat) return;
         const trimmed = text.trim();
         if (!trimmed) return;
 
         const newMessage: Message = {
             id: `local-${Date.now()}`,
-            senderId: 'me',
+            senderId: fromApp ? 'app' : 'me',
             text: trimmed,
             timestamp: getTimestamp(),
-            isMe: true,
+            isMe: !fromApp,
             variant
         };
 
@@ -108,7 +109,7 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
     };
 
     const handleSendCompliment = (text: string) => {
-        appendMessage(text, 'compliment');
+        appendMessage(text, 'compliment', true);
         setIsComplimentModalOpen(false);
     };
 
@@ -136,7 +137,7 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
     // Chat Detail View
     if (selectedChat) {
         return (
-            <div className="h-full flex flex-col bg-brand-dark">
+            <div className="min-h-screen min-h-[100dvh] flex flex-col bg-brand-dark">
                 {/* Chat Header */}
                 <div className="px-4 pt-10 pb-4 bg-brand-card/80 backdrop-blur-md border-b border-white/5 flex items-center justify-between z-10">
                     <div className="flex items-center gap-3">
@@ -187,12 +188,21 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
                     </div>
                     {messages.map((msg) => {
                         const bubbleClass = resolveBubbleClasses(msg);
+                        const isAppMessage = msg.variant === 'icebreaker' || msg.variant === 'compliment' || msg.senderId === 'app';
+                        const isMine = msg.isMe && !isAppMessage;
+                        const alignClass = isAppMessage ? 'justify-start' : isMine ? 'justify-end' : 'justify-start';
+
                         return (
-                            <div key={msg.id} className={`flex w-full ${msg.isMe ? 'justify-end' : 'justify-start'}`}>
+                            <div key={msg.id} className={`flex w-full ${alignClass} items-end gap-2`}>
+                                {isAppMessage && (
+                                    <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10 bg-black/60 flex-shrink-0">
+                                        <img src={appIcon} alt="The Game" className="w-full h-full object-cover" />
+                                    </div>
+                                )}
                                 <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${bubbleClass}`}>
                                     {msg.text}
                                 </div>
-                                <span className="text-[10px] text-gray-600 self-end ml-1 mb-1">{msg.timestamp}</span>
+                                <span className="text-[10px] text-gray-600 self-end mb-1">{msg.timestamp}</span>
                             </div>
                         );
                     })}
@@ -322,7 +332,7 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
     const recentMatches = MOCK_PROFILES.slice(0, 6);
 
     return (
-        <div className="h-full flex flex-col bg-brand-dark pt-10 px-4 pb-24 overflow-y-auto no-scrollbar">
+        <div className="min-h-screen min-h-[100dvh] flex flex-col bg-brand-dark pt-10 px-4 pb-24 overflow-y-auto no-scrollbar">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-white">Mensagens</h1>
                 <Search className="text-gray-500" size={24} />
