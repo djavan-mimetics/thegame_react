@@ -29,9 +29,8 @@ export const Rules: React.FC<RulesProps> = ({ onNavigate }) => {
                 desc="Certifique-se de que suas fotos, idade e biografia sejam fiéis a quem você é."
             />
             <RuleItem 
-                title="Fique seguro" 
-                desc="Não se precipite em fornecer informações pessoais. Namore com segurança."
-                linkText="Namore com segurança"
+                title="Faça sexo seguro" 
+                desc="Use camisinha. Aqui todo herói usa capa."
             />
             <RuleItem 
                 title="Converse com calma" 

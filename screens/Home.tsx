@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { MOCK_PROFILES, TAGS_LIST } from '../constants';
 import { UserProfile, AppScreen } from '../types';
-import { Heart, HeartCrack, MapPin, Info, X, ChevronDown, Ruler, Moon, GraduationCap, Wine, Cigarette, Dog, Dumbbell, Briefcase, Search, Globe, Lightbulb, Target, Users, Baby, MessageCircle, HeartHandshake, Utensils, Bed, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, HeartCrack, MapPin, Info, X, ChevronDown, Ruler, Moon, GraduationCap, Wine, Cigarette, Dog, Dumbbell, Search, Globe, Lightbulb, Users, Baby, HeartHandshake, Utensils, Bed, Trophy, Sun, ChevronLeft, ChevronRight } from 'lucide-react';
 import logoMark from '../src/img/logo.png';
 import { Modal } from '../components/Modal';
 
@@ -15,6 +15,14 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
     const [lastDirection, setLastDirection] = useState<string | null>(null);
     const [isExpanded, setIsExpanded] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+    const formatTagLabel = (tag: unknown) => {
+        const raw = String(tag ?? '').trim();
+        const withoutHash = raw.startsWith('#') ? raw.slice(1).trim() : raw;
+        if (!withoutHash) return '#Geral';
+        const lower = withoutHash.toLowerCase();
+        return `#${lower.charAt(0).toUpperCase()}${lower.slice(1)}`;
+    };
 
     const fallbackProfileImage = React.useMemo(() => (
         `data:image/svg+xml;utf8,${encodeURIComponent(`
@@ -37,31 +45,18 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
 
     const handleImageError = (event: React.SyntheticEvent<HTMLImageElement>) => {
         if (event.currentTarget.src !== fallbackProfileImage) {
-                event.currentTarget.onerror = null;
-                event.currentTarget.src = fallbackProfileImage;
+            event.currentTarget.onerror = null;
+            event.currentTarget.src = fallbackProfileImage;
         }
     };
-  
-  // State for the user's active active tag
+
+    // State for the user's active active tag
     const [myTag, setMyTag] = useState<string>("Jogar videogame");
     const [isTagModalOpen, setIsTagModalOpen] = useState(false);
 
     const currentProfile = profiles[0];
     const currentImages = currentProfile?.images || [];
     const displayedImage = currentImages[currentImageIndex] || currentImages[0] || fallbackProfileImage;
-
-    const relationshipDetails = [
-        { label: 'Intenção', value: currentProfile?.intention, icon: Target },
-        { label: 'Relacionamento', value: currentProfile?.relationship, icon: Users },
-        { label: 'Família', value: currentProfile?.family, icon: Baby }
-    ].filter(detail => Boolean(detail.value));
-
-    const lifestyleDetails = [
-        { label: 'Comunicação', value: currentProfile?.communication, icon: MessageCircle },
-        { label: 'Linguagem do amor', value: currentProfile?.loveLanguage, icon: HeartHandshake },
-        { label: 'Alimentação', value: currentProfile?.food, icon: Utensils },
-        { label: 'Sono', value: currentProfile?.sleep, icon: Bed }
-    ].filter(detail => Boolean(detail.value));
 
     const lookingForChips = currentProfile?.lookingFor || [];
     const personalityTraits = currentProfile?.personality || [];
@@ -201,7 +196,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
             onClick={() => setIsTagModalOpen(true)}
             className="pointer-events-auto bg-brand-card/60 backdrop-blur-md px-4 py-1.5 rounded-full border border-brand-primary/30 flex items-center gap-1 hover:bg-brand-card/80 transition-colors active:scale-95"
         >
-            <span className="text-[12px] font-bold text-brand-primary tracking-wide">#{myTag.toUpperCase()}</span>
+            <span className="text-[12px] font-bold text-brand-primary tracking-wide">{formatTagLabel(myTag)}</span>
         </button>
       </div>
 
@@ -219,6 +214,12 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
         <div className={`absolute inset-0 bg-brand-dark overflow-hidden transition-all duration-300 ease-out origin-bottom ${getCardStyle()}`}>
             {/* Image */}
             <div className="h-full w-full relative">
+                {currentProfile?.availableToday && (
+                    <>
+                        <div className="absolute -inset-6 bg-brand-accent/20 blur-3xl pointer-events-none" />
+                        <div className="absolute inset-0 ring-2 ring-brand-accent/60 ring-inset shadow-[0_0_70px_rgba(156,39,176,0.55)] pointer-events-none" />
+                    </>
+                )}
                 <img src={displayedImage} alt={currentProfile.name} className="w-full h-full object-cover" onError={handleImageError} />
 
                 {currentImages.length > 1 && (
@@ -251,11 +252,15 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
                     {/* Content Scroll Wrapper */}
                     <div className="w-full h-full overflow-y-auto no-scrollbar px-5 pt-8 pb-24">
                         
-                        {/* Header Row (Name + Age + Info Button) */}
+                        {/* Header Row (Nome, Idade, Altura - Relacionamento + Info Button) */}
                         <div className="w-full flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-3">
-                                <h2 className="text-4xl font-extrabold text-white drop-shadow-md">{currentProfile.name}</h2>
-                                <span className="text-2xl font-medium text-gray-200 drop-shadow-md">{currentProfile.age}</span>
+                            <div className="min-w-0">
+                                <h2 className="text-4xl font-extrabold text-white drop-shadow-md truncate">
+                                    {currentProfile.name},
+                                    <span className="text-2xl font-medium text-gray-200 drop-shadow-md">
+                                        {' '}{currentProfile.age}{currentProfile.height ? `, ${currentProfile.height}` : ''}
+                                    </span>
+                                </h2>
                             </div>
                             {/* Info Button - Clickable */}
                             <button 
@@ -272,20 +277,32 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
                                 {isExpanded ? <ChevronDown size={20} /> : <Info size={20} />}
                             </button>
                         </div>
-                        
-                        {/* Basic Info (Distance / Tag) */}
-                        <div className="flex items-center gap-2 text-gray-200 mb-4 text-sm font-medium drop-shadow-sm">
-                            <MapPin size={16} className="text-brand-primary" />
-                            <span>{currentProfile.distance} km • #{currentProfile.tags[0] || 'Geral'}</span>
-                        </div>
 
-                        {/* Tags List */}
-                        <div className="flex flex-wrap gap-2 mb-4">
-                            {currentProfile.tags.slice(0, isExpanded ? 10 : 3).map(tag => (
-                                <span key={tag} className="px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full text-xs font-bold text-white border border-white/10">
-                                    {tag}
+                        {/* Como se classifica, Se racha a conta (badges) */}
+                        {(currentProfile.classification || currentProfile.billSplit) && (
+                            <div className="flex flex-wrap items-center gap-2 mb-3">
+                                {currentProfile.classification && (
+                                    <span className="px-3 py-1 border border-white/10 rounded-full text-xs font-bold text-white bg-white/5 max-w-full truncate">
+                                        {currentProfile.classification}
+                                    </span>
+                                )}
+                                {currentProfile.billSplit && (
+                                    <span className="px-3 py-1 border border-white/10 rounded-full text-xs font-bold text-white bg-white/5 max-w-full truncate">
+                                        {currentProfile.billSplit}
+                                    </span>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Distância + Tag atual (badge) */}
+                        <div className="flex items-center gap-3 text-gray-200 mb-4 text-sm font-medium drop-shadow-sm">
+                            <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                                <MapPin size={16} className="text-brand-primary" />
+                                <span className="truncate">{currentProfile.distance} km</span>
+                                <span className="shrink-0 px-3 py-1 border border-white/10 rounded-full text-xs font-bold text-white bg-white/5">
+                                    {formatTagLabel(currentProfile.currentTag || currentProfile.tags?.[0] || 'Geral')}
                                 </span>
-                            ))}
+                            </div>
                         </div>
 
                         {/* Bio */}
@@ -298,141 +315,178 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
                              
                              <div className="w-full h-px bg-white/10 mb-6" />
 
-                             {/* Detailed Info Grid */}
-                             <h3 className="text-white font-bold mb-3">Sobre {currentProfile.name}</h3>
-                             <div className="grid grid-cols-2 gap-3">
-                                {currentProfile.job && (
-                                    <div className="bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-white/5">
-                                        <Briefcase size={20} className="text-brand-primary shrink-0" />
-                                        <div className="overflow-hidden">
-                                            <p className="text-[10px] text-gray-400 uppercase font-bold">Profissão</p>
-                                            <p className="text-sm text-white truncate">{currentProfile.job}</p>
+                             {/* Informações Básicas (mesma ordem do formulário) */}
+                             <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                                <h4 className="text-white font-bold mb-3">Informações Básicas</h4>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {currentProfile.height && (
+                                        <div className="bg-black/40 rounded-xl p-3 flex items-center gap-3 border border-white/5">
+                                            <Ruler size={18} className="text-brand-primary shrink-0" />
+                                            <div>
+                                                <p className="text-[10px] text-gray-400 uppercase font-bold">Altura</p>
+                                                <p className="text-sm text-white">{currentProfile.height}</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                                {currentProfile.sign && (
-                                    <div className="bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-white/5">
-                                        <Moon size={20} className="text-brand-primary shrink-0" />
-                                        <div>
-                                            <p className="text-[10px] text-gray-400 uppercase font-bold">Signo</p>
-                                            <p className="text-sm text-white">{currentProfile.sign}</p>
+                                    )}
+                                    {currentProfile.relationship && (
+                                        <div className="bg-black/40 rounded-xl p-3 flex items-center gap-3 border border-white/5">
+                                            <Users size={18} className="text-brand-primary shrink-0" />
+                                            <div>
+                                                <p className="text-[10px] text-gray-400 uppercase font-bold">Relacionamento</p>
+                                                <p className="text-sm text-white">{currentProfile.relationship}</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                                {currentProfile.height && (
-                                    <div className="bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-white/5">
-                                        <Ruler size={20} className="text-brand-primary shrink-0" />
-                                        <div>
-                                            <p className="text-[10px] text-gray-400 uppercase font-bold">Altura</p>
-                                            <p className="text-sm text-white">{currentProfile.height}</p>
+                                    )}
+                                    {currentProfile.classification && (
+                                        <div className="bg-black/40 rounded-xl p-3 flex items-center gap-3 border border-white/5 col-span-2">
+                                            <Trophy size={18} className="text-brand-primary shrink-0" />
+                                            <div>
+                                                <p className="text-[10px] text-gray-400 uppercase font-bold">Como se classifica</p>
+                                                <p className="text-sm text-white">{currentProfile.classification}</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                                {currentProfile.education && (
-                                    <div className="bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-white/5">
-                                        <GraduationCap size={20} className="text-brand-primary shrink-0" />
-                                        <div className="overflow-hidden">
-                                            <p className="text-[10px] text-gray-400 uppercase font-bold">Formação</p>
-                                            <p className="text-sm text-white truncate">{currentProfile.education}</p>
+                                    )}
+                                    {currentProfile.billSplit && (
+                                        <div className="bg-black/40 rounded-xl p-3 flex items-center gap-3 border border-white/5 col-span-2">
+                                            <HeartHandshake size={18} className="text-brand-primary shrink-0" />
+                                            <div>
+                                                <p className="text-[10px] text-gray-400 uppercase font-bold">Conta no date</p>
+                                                <p className="text-sm text-white">{currentProfile.billSplit}</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                                {currentProfile.drink && (
-                                    <div className="bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-white/5">
-                                        <Wine size={20} className="text-pink-500 shrink-0" />
-                                        <div>
-                                            <p className="text-[10px] text-gray-400 uppercase font-bold">Bebida</p>
-                                            <p className="text-sm text-white">{currentProfile.drink}</p>
+                                    )}
+                                    {typeof currentProfile.availableToday === 'boolean' && (
+                                        <div className={`${currentProfile.availableToday ? 'bg-brand-accent/25 border-brand-accent/30' : 'bg-black/40 border-white/5'} rounded-xl p-3 flex items-center gap-3 border col-span-2`}>
+                                            <Sun size={18} className={currentProfile.availableToday ? 'text-brand-accent' : 'text-brand-primary'} />
+                                            <div>
+                                                <p className="text-[10px] text-gray-400 uppercase font-bold">Date hoje</p>
+                                                <p className="text-sm text-white">{currentProfile.availableToday ? 'Quero sair hoje' : 'Outro dia eu saio'}</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                                {currentProfile.smoke && (
-                                    <div className="bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-white/5">
-                                        <Cigarette size={20} className="text-gray-400 shrink-0" />
-                                        <div>
-                                            <p className="text-[10px] text-gray-400 uppercase font-bold">Fumo</p>
-                                            <p className="text-sm text-white">{currentProfile.smoke}</p>
-                                        </div>
-                                    </div>
-                                )}
-                                {currentProfile.pets && (
-                                    <div className="bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-white/5">
-                                        <Dog size={20} className="text-orange-400 shrink-0" />
-                                        <div>
-                                            <p className="text-[10px] text-gray-400 uppercase font-bold">Pets</p>
-                                            <p className="text-sm text-white">{currentProfile.pets}</p>
-                                        </div>
-                                    </div>
-                                )}
-                                {currentProfile.exercise && (
-                                    <div className="bg-white/5 rounded-xl p-3 flex items-center gap-3 border border-white/5">
-                                        <Dumbbell size={20} className="text-green-500 shrink-0" />
-                                        <div>
-                                            <p className="text-[10px] text-gray-400 uppercase font-bold">Exercício</p>
-                                            <p className="text-sm text-white">{currentProfile.exercise}</p>
+                                    )}
+                                </div>
+
+                                {lookingForChips.length > 0 && (
+                                    <div className="mt-4">
+                                        <p className="text-[10px] text-gray-400 uppercase font-bold mb-2">Você procura por</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {lookingForChips.map(target => (
+                                                <span key={target} className="px-3 py-1 border border-white/10 rounded-full text-xs font-bold text-white bg-white/5">
+                                                    {target}
+                                                </span>
+                                            ))}
                                         </div>
                                     </div>
                                 )}
                              </div>
 
-                             {(relationshipDetails.length > 0 || lookingForChips.length > 0) && (
-                                <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
-                                    <h4 className="text-white font-bold mb-3">Intenções & Vínculos</h4>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {relationshipDetails.map(detail => (
-                                            <div key={detail.label} className="bg-black/40 rounded-xl p-3 flex items-center gap-3 border border-white/5">
-                                                <detail.icon size={18} className="text-brand-primary shrink-0" />
-                                                <div>
-                                                    <p className="text-[10px] text-gray-400 uppercase font-bold">{detail.label}</p>
-                                                    <p className="text-sm text-white">{detail.value}</p>
-                                                </div>
+                             {/* Mais sobre mim */}
+                             <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                                <h4 className="text-white font-bold mb-3">Mais sobre mim</h4>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {currentProfile.sign && (
+                                        <div className="bg-black/40 rounded-xl p-3 flex items-center gap-3 border border-white/5">
+                                            <Moon size={18} className="text-brand-primary shrink-0" />
+                                            <div>
+                                                <p className="text-[10px] text-gray-400 uppercase font-bold">Signo</p>
+                                                <p className="text-sm text-white">{currentProfile.sign}</p>
                                             </div>
-                                        ))}
-                                    </div>
-                                    {lookingForChips.length > 0 && (
-                                        <div className="mt-4">
-                                            <p className="text-[10px] text-gray-400 uppercase font-bold mb-2">Buscando</p>
-                                            <div className="flex flex-wrap gap-2">
-                                                {lookingForChips.map(target => (
-                                                    <span key={target} className="px-3 py-1 border border-white/10 rounded-full text-xs font-bold text-white bg-white/5">
-                                                        {target}
-                                                    </span>
-                                                ))}
+                                        </div>
+                                    )}
+                                    {currentProfile.education && (
+                                        <div className="bg-black/40 rounded-xl p-3 flex items-center gap-3 border border-white/5">
+                                            <GraduationCap size={18} className="text-brand-primary shrink-0" />
+                                            <div className="overflow-hidden">
+                                                <p className="text-[10px] text-gray-400 uppercase font-bold">Formação</p>
+                                                <p className="text-sm text-white truncate">{currentProfile.education}</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {currentProfile.family && (
+                                        <div className="bg-black/40 rounded-xl p-3 flex items-center gap-3 border border-white/5">
+                                            <Baby size={18} className="text-brand-primary shrink-0" />
+                                            <div>
+                                                <p className="text-[10px] text-gray-400 uppercase font-bold">Família</p>
+                                                <p className="text-sm text-white">{currentProfile.family}</p>
                                             </div>
                                         </div>
                                     )}
                                 </div>
-                             )}
 
-                             {lifestyleDetails.length > 0 && (
-                                <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
-                                    <h4 className="text-white font-bold mb-3">Rotina & Conexões</h4>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {lifestyleDetails.map(detail => (
-                                            <div key={detail.label} className="bg-black/40 rounded-xl p-3 flex items-center gap-3 border border-white/5">
-                                                <detail.icon size={18} className="text-brand-accent shrink-0" />
-                                                <div>
-                                                    <p className="text-[10px] text-gray-400 uppercase font-bold">{detail.label}</p>
-                                                    <p className="text-sm text-white">{detail.value}</p>
-                                                </div>
+                                {personalityTraits.length > 0 && (
+                                    <div className="mt-4">
+                                        <p className="text-[10px] text-gray-400 uppercase font-bold mb-2">Personalidade</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {personalityTraits.map(trait => (
+                                                <span key={trait} className="px-3 py-1 bg-black/40 border border-white/10 rounded-full text-xs font-bold text-white">
+                                                    {trait}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                             </div>
+
+                             {/* Estilo de vida */}
+                             <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                                <h4 className="text-white font-bold mb-3">Estilo de vida</h4>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {currentProfile.pets && (
+                                        <div className="bg-black/40 rounded-xl p-3 flex items-center gap-3 border border-white/5">
+                                            <Dog size={18} className="text-brand-accent shrink-0" />
+                                            <div>
+                                                <p className="text-[10px] text-gray-400 uppercase font-bold">Pets</p>
+                                                <p className="text-sm text-white">{currentProfile.pets}</p>
                                             </div>
-                                        ))}
-                                    </div>
+                                        </div>
+                                    )}
+                                    {currentProfile.drink && (
+                                        <div className="bg-black/40 rounded-xl p-3 flex items-center gap-3 border border-white/5">
+                                            <Wine size={18} className="text-pink-500 shrink-0" />
+                                            <div>
+                                                <p className="text-[10px] text-gray-400 uppercase font-bold">Bebida</p>
+                                                <p className="text-sm text-white">{currentProfile.drink}</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {currentProfile.smoke && (
+                                        <div className="bg-black/40 rounded-xl p-3 flex items-center gap-3 border border-white/5">
+                                            <Cigarette size={18} className="text-gray-400 shrink-0" />
+                                            <div>
+                                                <p className="text-[10px] text-gray-400 uppercase font-bold">Fumo</p>
+                                                <p className="text-sm text-white">{currentProfile.smoke}</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {currentProfile.exercise && (
+                                        <div className="bg-black/40 rounded-xl p-3 flex items-center gap-3 border border-white/5">
+                                            <Dumbbell size={18} className="text-green-500 shrink-0" />
+                                            <div>
+                                                <p className="text-[10px] text-gray-400 uppercase font-bold">Atividade física</p>
+                                                <p className="text-sm text-white">{currentProfile.exercise}</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {currentProfile.food && (
+                                        <div className="bg-black/40 rounded-xl p-3 flex items-center gap-3 border border-white/5">
+                                            <Utensils size={18} className="text-brand-accent shrink-0" />
+                                            <div>
+                                                <p className="text-[10px] text-gray-400 uppercase font-bold">Minha alimentação</p>
+                                                <p className="text-sm text-white">{currentProfile.food}</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {currentProfile.sleep && (
+                                        <div className="bg-black/40 rounded-xl p-3 flex items-center gap-3 border border-white/5">
+                                            <Bed size={18} className="text-brand-accent shrink-0" />
+                                            <div>
+                                                <p className="text-[10px] text-gray-400 uppercase font-bold">Hábitos de sono</p>
+                                                <p className="text-sm text-white">{currentProfile.sleep}</p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                             )}
-
-                             {personalityTraits.length > 0 && (
-                                <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
-                                    <h4 className="text-white font-bold mb-3">Personalidade</h4>
-                                    <div className="flex flex-wrap gap-2">
-                                        {personalityTraits.map(trait => (
-                                            <span key={trait} className="px-3 py-1 bg-black/40 border border-white/10 rounded-full text-xs font-bold text-white">
-                                                {trait}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                             )}
+                             </div>
 
                              <div className="pb-32 text-center">
                                 <button onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }} className="text-gray-500 text-sm font-bold uppercase tracking-wider hover:text-white transition-colors">

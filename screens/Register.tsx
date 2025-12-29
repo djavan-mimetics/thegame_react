@@ -21,6 +21,49 @@ const LogoFooter = () => (
     </div>
 );
 
+const CLASSIFICATION_OPTIONS_MASC = [
+    'Mendigo',
+    'Pobre',
+    'Pobre Premium',
+    'Dublê de Rico',
+    'Velho da Lancha',
+    'Jovem da Lancha',
+    'Zilionário',
+    'Sou chato, não quero me classificar'
+];
+
+const CLASSIFICATION_OPTIONS_FEM = [
+    'Mendiga',
+    'Pobre',
+    'Pobre Premium',
+    'Dublê de rica',
+    'Rica',
+    'Zilionária',
+    'Sou chata, não quero me classificar'
+];
+
+const getGenderGroup = (gender: string): 'masc' | 'fem' | 'other' => {
+    const g = (gender || '').toLowerCase();
+    if (g.startsWith('mulher')) return 'fem';
+    if (g.startsWith('homem')) return 'masc';
+    return 'other';
+};
+
+const getClassificationOptions = (gender: string) => {
+    const group = getGenderGroup(gender);
+    if (group === 'fem') return CLASSIFICATION_OPTIONS_FEM;
+    if (group === 'masc') return CLASSIFICATION_OPTIONS_MASC;
+    return [...CLASSIFICATION_OPTIONS_MASC, ...CLASSIFICATION_OPTIONS_FEM];
+};
+
+const getBillSplitOptions = (gender: string) => {
+    const group = getGenderGroup(gender);
+    const base = ['Pago a conta', 'Racho a conta'];
+    if (group === 'fem') return [...base, 'Sou uma princesa, meu date paga a conta'];
+    if (group === 'masc') return [...base, 'Sou um princeso, meu date paga a conta'];
+    return [...base, 'Sou uma princesa, meu date paga a conta', 'Sou um princeso, meu date paga a conta'];
+};
+
 export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
   const [step, setStep] = useState(0);
   const [formData, setFormData] = useState({
@@ -31,9 +74,12 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
     birthDate: '',
     city: '',
     state: '',
+        height: '',
     gender: '',
     lookingFor: [] as string[],
     relationship: '',
+        classification: '',
+        billSplit: '',
     images: [] as string[]
   });
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -327,10 +373,39 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
     );
   }
 
-  // STEP 4: GENDER
+  // STEP 4: HEIGHT
   if (step === 4) {
+      const heightValue = (formData.height || '').replace(/\s*cm\s*$/i, '');
+      return (
+        <WizardLayout title="Altura" subtitle="Qual sua altura?" onBack={handleBack}>
+            <div className="space-y-3">
+                <label className="text-xs font-bold text-gray-500 uppercase ml-1 mb-1 block">Altura (cm)</label>
+                <input
+                    type="number"
+                    inputMode="numeric"
+                    value={heightValue}
+                    onChange={e => updateData('height', e.target.value)}
+                    className="w-full bg-brand-card border border-gray-700 rounded-xl py-4 px-4 text-white text-lg focus:border-brand-primary focus:outline-none"
+                    placeholder="Ex: 175"
+                    autoFocus
+                />
+            </div>
+            <Button
+                fullWidth
+                onClick={() => { updateData('height', heightValue ? `${heightValue} cm` : ''); handleNext(); }}
+                disabled={!heightValue}
+                className="mt-8"
+            >
+                Continuar
+            </Button>
+        </WizardLayout>
+      );
+  }
+
+  // STEP 5: GENDER
+  if (step === 5) {
     return (
-        <WizardLayout title="Seu Gênero" subtitle="Como você se identifica?" onBack={handleBack}>
+        <WizardLayout title="Você é" subtitle="Como você se identifica?" onBack={handleBack}>
            <div className="space-y-3 overflow-y-auto max-h-[60vh] pr-1 no-scrollbar">
                {GENDER_OPTIONS.map(g => (
                    <button key={g} onClick={() => { updateData('gender', g); handleNext(); }} className={`w-full p-4 rounded-xl border flex justify-between items-center transition-all ${formData.gender === g ? 'bg-brand-primary/20 border-brand-primary text-white font-bold' : 'bg-brand-card border-gray-800 text-gray-300 hover:bg-gray-800'}`}>
@@ -342,8 +417,8 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
     );
   }
 
-  // STEP 5: INTERESTED IN
-  if (step === 5) {
+  // STEP 6: INTERESTED IN
+  if (step === 6) {
       const toggle = (opt: string) => {
           let current = [...formData.lookingFor];
           if (current.includes(opt)) {
@@ -356,7 +431,7 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
       };
       
       return (
-        <WizardLayout title="Tenho interesse em" subtitle="Quem você quer conhecer?" onBack={handleBack}>
+        <WizardLayout title="Você procura por" subtitle="Quem você quer conhecer?" onBack={handleBack}>
            <div className="space-y-3 overflow-y-auto max-h-[52vh] pr-1 pb-4 no-scrollbar">
                {LOOKING_FOR_OPTIONS.map(opt => (
                    <button key={opt} onClick={() => toggle(opt)} className={`w-full p-4 rounded-xl border flex justify-between items-center transition-all ${formData.lookingFor.includes(opt) ? 'bg-brand-primary/20 border-brand-primary text-white font-bold' : 'bg-brand-card border-gray-800 text-gray-300 hover:bg-gray-800'}`}>
@@ -369,8 +444,8 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
       );
   }
 
-  // STEP 6: RELATIONSHIP
-  if (step === 6) {
+  // STEP 7: RELATIONSHIP
+  if (step === 7) {
       return (
         <WizardLayout title="Relacionamento" subtitle="O que você busca?" onBack={handleBack}>
            <div className="space-y-3">
@@ -384,8 +459,40 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
       );
   }
 
-  // STEP 7: PHOTOS
-  if (step === 7) {
+  // STEP 8: CLASSIFICATION
+  if (step === 8) {
+      const options = getClassificationOptions(formData.gender);
+      return (
+        <WizardLayout title="Como você se classifica?" subtitle="Escolha uma opção" onBack={handleBack}>
+           <div className="space-y-3 overflow-y-auto max-h-[60vh] pr-1 no-scrollbar">
+               {options.map(opt => (
+                   <button key={opt} onClick={() => { updateData('classification', opt); handleNext(); }} className={`w-full p-4 rounded-xl border flex justify-between items-center transition-all ${formData.classification === opt ? 'bg-brand-primary/20 border-brand-primary text-white font-bold' : 'bg-brand-card border-gray-800 text-gray-300 hover:bg-gray-800'}`}>
+                       {opt} {formData.classification === opt && <Check size={20} className="text-brand-primary" />}
+                   </button>
+               ))}
+           </div>
+        </WizardLayout>
+      );
+  }
+
+  // STEP 9: BILL SPLIT
+  if (step === 9) {
+      const options = getBillSplitOptions(formData.gender);
+      return (
+        <WizardLayout title="No date você paga ou racha a conta?" subtitle="Escolha uma opção" onBack={handleBack}>
+           <div className="space-y-3 overflow-y-auto max-h-[60vh] pr-1 no-scrollbar">
+               {options.map(opt => (
+                   <button key={opt} onClick={() => { updateData('billSplit', opt); handleNext(); }} className={`w-full p-4 rounded-xl border flex justify-between items-center transition-all ${formData.billSplit === opt ? 'bg-brand-primary/20 border-brand-primary text-white font-bold' : 'bg-brand-card border-gray-800 text-gray-300 hover:bg-gray-800'}`}>
+                       {opt} {formData.billSplit === opt && <Check size={20} className="text-brand-primary" />}
+                   </button>
+               ))}
+           </div>
+        </WizardLayout>
+      );
+  }
+
+  // STEP 10: PHOTOS
+  if (step === 10) {
             return (
                 <div className="min-h-screen flex flex-col bg-brand-dark overflow-hidden relative">
             <input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={onFileSelect} />
@@ -442,7 +549,7 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
       );
   }
 
-  // STEP 8: SUCCESS
+    // STEP 11: SUCCESS
     return (
         <div className="min-h-screen flex flex-col p-8 bg-brand-dark animate-in fade-in duration-500">
                 <div className="flex-1 flex flex-col items-center justify-center text-center">

@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AppScreen, MyProfile } from '../types';
 import { TAGS_LIST, LOCATIONS } from '../constants';
-import { ChevronLeft, Plus, ChevronRight, Moon, GraduationCap, Users, User, Ruler, HeartHandshake, Smile, MessageCircle, Heart, Dog, Wine, Cigarette, Dumbbell, Pizza, X, Check, Sun, Trash2, Camera, Image as ImageIcon, RotateCcw, Facebook, Mail, Trophy, Calendar, MapPin, ChevronDown } from 'lucide-react';
+import { ChevronLeft, Plus, ChevronRight, Moon, GraduationCap, Users, User, Ruler, HeartHandshake, Smile, Heart, Dog, Wine, Cigarette, Dumbbell, Pizza, X, Check, Sun, Trash2, Camera, Image as ImageIcon, RotateCcw, Facebook, Mail, Trophy, Calendar, MapPin, ChevronDown } from 'lucide-react';
 import { Modal } from '../components/Modal';
 
 interface EditProfileProps {
@@ -14,7 +14,6 @@ interface EditProfileProps {
 
 // --- Configuration Options (Translations) ---
 const LABEL_MAP: Record<string, string> = {
-    intention: 'Intenção',
     relationship: 'Relacionamento',
     sign: 'Signo',
     education: 'Formação',
@@ -25,19 +24,18 @@ const LABEL_MAP: Record<string, string> = {
     exercise: 'Exercícios',
     food: 'Alimentação',
     sleep: 'Sono',
-    communication: 'Comunicação',
-    loveLanguage: 'Linguagem do amor',
     personality: 'Personalidade',
     height: 'Altura',
-    pronouns: 'Pronomes',
-    interests: 'Tags Principais',
-    gender: 'Gênero',
-    lookingFor: 'Tenho interesse em'
+    interests: 'Tag Atual',
+    classification: 'Como você se classifica?',
+    billSplit: 'No date você paga ou racha a conta?',
+    availableToday: 'Está disponível para um date hoje?',
+    gender: 'Você é',
+    lookingFor: 'Você procura por'
 };
 
 const OPTIONS: Record<string, string[]> = {
-  intention: ['Um relacionamento sério', 'Algo casual', 'Não sei ainda', 'Novas amizades', 'Tô procurando'],
-  relationship: ['Monogamia', 'Não-monogamia', 'Poliamor', 'Aberto', 'Outro'],
+    relationship: ['Casamento', 'Namoro', 'Amizade colorida', 'Peguete', 'Um pente e rala', 'Trisal', 'Suruba', 'Nem eu sei o que quero'],
   sign: ['Áries', 'Touro', 'Gêmeos', 'Câncer', 'Leão', 'Virgem', 'Libra', 'Escorpião', 'Sagitário', 'Capricórnio', 'Aquário', 'Peixes'],
   education: ['Ensino Médio', 'Cursando Graduação', 'Superior completo', 'Pós-graduação', 'Mestrado', 'Doutorado'],
   family: ['Quero filhos', 'Não quero filhos', 'Tenho filhos', 'Talvez um dia'],
@@ -47,11 +45,52 @@ const OPTIONS: Record<string, string[]> = {
   exercise: ['Todo dia', 'Frequentemente', 'Às vezes', 'Nunca'],
   food: ['Vegano', 'Vegetariano', 'Onívoro', 'Carnívoro', 'Halal', 'Kosher'],
   sleep: ['Madrugador', 'Coruja noturna', 'Dorme cedo', 'Insônia criativa'],
-  communication: ['Mensagens longas', 'Chamada de vídeo', 'Pessoalmente', 'Áudio'],
-  loveLanguage: ['Toque físico', 'Palavras de afirmação', 'Tempo de qualidade', 'Presentes', 'Atos de serviço'],
   personality: ['Aventureiro', 'Criativo', 'Extrovertido', 'Introvertido', 'Romântico', 'Engraçado', 'Ambicioso', 'Zen', 'Festeiro', 'Intelectual', 'Caseiro', 'Esportista', 'Líder', 'Empático'],
-  gender: ['Homem', 'Mulher', 'Homem Trans', 'Mulher Trans', 'Não-binário', 'Agênero', 'Gênero Fluido', 'Queer', 'Outro'],
-  lookingFor: ['Homens', 'Mulheres', 'Todos']
+    gender: ['Homem Hétero', 'Homem Bi', 'Homem Gay', 'Homem Trans', 'Mulher Hétero', 'Mulher Bi', 'Mulher Lésbica', 'Mulher Trans', 'Outro'],
+    lookingFor: ['Homem Hétero', 'Homem Bi', 'Homem Gay', 'Homem Trans', 'Mulher Hétero', 'Mulher Bi', 'Mulher Lésbica', 'Mulher Trans', 'Outro']
+};
+
+const CLASSIFICATION_OPTIONS_MASC = [
+    'Mendigo',
+    'Pobre',
+    'Pobre Premium',
+    'Dublê de Rico',
+    'Velho da Lancha',
+    'Jovem da Lancha',
+    'Zilionário',
+    'Sou chato, não quero me classificar'
+];
+
+const CLASSIFICATION_OPTIONS_FEM = [
+    'Mendiga',
+    'Pobre',
+    'Pobre Premium',
+    'Dublê de rica',
+    'Rica',
+    'Zilionária',
+    'Sou chata, não quero me classificar'
+];
+
+const getGenderGroup = (gender: string): 'masc' | 'fem' | 'other' => {
+    const g = (gender || '').toLowerCase();
+    if (g.startsWith('mulher')) return 'fem';
+    if (g.startsWith('homem')) return 'masc';
+    return 'other';
+};
+
+const getClassificationOptions = (gender: string) => {
+    const group = getGenderGroup(gender);
+    if (group === 'fem') return CLASSIFICATION_OPTIONS_FEM;
+    if (group === 'masc') return CLASSIFICATION_OPTIONS_MASC;
+    return [...CLASSIFICATION_OPTIONS_MASC, ...CLASSIFICATION_OPTIONS_FEM];
+};
+
+const getBillSplitOptions = (gender: string) => {
+    const group = getGenderGroup(gender);
+    const base = ['Pago a conta', 'Racho a conta'];
+    if (group === 'fem') return [...base, 'Sou uma princesa, meu date paga a conta'];
+    if (group === 'masc') return [...base, 'Sou um princeso, meu date paga a conta'];
+    return [...base, 'Sou uma princesa, meu date paga a conta', 'Sou um princeso, meu date paga a conta'];
 };
 
 const MODAL_OVERLAY = 'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-center items-center px-4 py-6 animate-in fade-in duration-200';
@@ -76,16 +115,11 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
 
   // Profile Data (Using lifted state for critical fields, local for detailed)
   const [profileData, setProfileData] = useState({
-    intention: "Tô procurando",
-    pronouns: "",
-    height: "",
-    relationship: "Monogamia",
+        relationship: "Namoro",
     sign: "Câncer",
     education: "Superior completo",
     family: "Não quero filhos",
     personality: "",
-    communication: "",
-    loveLanguage: "",
     pets: "Não tenho pets",
     drink: "Socialmente",
     smoke: "Fumo quando bebo",
@@ -95,9 +129,10 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
   });
 
   // UI State
-  const [activeModal, setActiveModal] = useState<keyof typeof profileData | 'interests' | 'gender' | 'lookingFor' | null>(null);
+    type ActiveModal = keyof typeof profileData | 'interests' | 'gender' | 'lookingFor' | 'height' | 'classification' | 'billSplit' | 'availableToday' | null;
+    const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [tempInputValue, setTempInputValue] = useState("");
-  const [interests, setInterests] = useState<string[]>(['Sambinha e pagode', 'Netflix', 'Japa']);
+    const currentTag = myProfile.currentTag || '';
 
     // Location (custom modals to avoid native <select> sheets)
     const [isStateModalOpen, setIsStateModalOpen] = useState(false);
@@ -110,16 +145,6 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
   const handleUpdate = (key: string, value: string) => {
     setProfileData(prev => ({ ...prev, [key]: value }));
     setActiveModal(null);
-  };
-
-  const toggleInterest = (tag: string) => {
-    if (interests.includes(tag)) {
-      setInterests(prev => prev.filter(t => t !== tag));
-    } else {
-      if (interests.length < 3) {
-        setInterests(prev => [...prev, tag]);
-      }
-    }
   };
 
   const toggleLookingFor = (option: string) => {
@@ -213,21 +238,52 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
             <div className="space-y-4">
                 <div className="flex flex-wrap gap-2">
                     {TAGS_LIST.map(tag => {
-                        const isSelected = interests.includes(tag);
+                        const isSelected = currentTag === tag;
                         return (
-                            <button key={tag} onClick={() => toggleInterest(tag)} className={`px-4 py-2 rounded-full text-sm font-bold border transition-all ${isSelected ? 'bg-brand-primary border-brand-primary text-white' : 'bg-transparent border-gray-600 text-gray-300'}`}>{tag}</button>
+                            <button key={tag} onClick={() => { updateProfile('currentTag', tag); setActiveModal(null); }} className={`px-4 py-2 rounded-full text-sm font-bold border transition-all ${isSelected ? 'bg-brand-primary border-brand-primary text-white' : 'bg-transparent border-gray-600 text-gray-300'}`}>{tag}</button>
                         );
                     })}
                 </div>
-                <p className="text-gray-500 text-xs text-center">Selecione até 3 tags.</p>
+                <p className="text-gray-500 text-xs text-center">Selecione 1 tag.</p>
             </div>
         );
     }
-    if (activeModal === 'height' || activeModal === 'pronouns') {
+    if (activeModal === 'height') {
         return (
             <div className="space-y-4">
-                <input type={activeModal === 'height' ? 'number' : 'text'} placeholder={activeModal === 'height' ? 'Ex: 175 (cm)' : 'Ex: Ela/Dela'} className="w-full bg-gray-800 text-white p-3 rounded-xl border border-gray-600 focus:border-brand-primary outline-none" autoFocus onChange={(e) => setTempInputValue(e.target.value)} />
-                <button onClick={() => { handleUpdate(activeModal, activeModal === 'height' ? `${tempInputValue} cm` : tempInputValue); setTempInputValue(""); }} className="w-full bg-brand-primary py-3 rounded-full font-bold text-white">Salvar</button>
+                <input type="number" placeholder="Ex: 175 (cm)" className="w-full bg-gray-800 text-white p-3 rounded-xl border border-gray-600 focus:border-brand-primary outline-none" autoFocus onChange={(e) => setTempInputValue(e.target.value)} />
+                <button onClick={() => { updateProfile('height', tempInputValue ? `${tempInputValue} cm` : ''); setActiveModal(null); setTempInputValue(""); }} className="w-full bg-brand-primary py-3 rounded-full font-bold text-white">Salvar</button>
+            </div>
+        );
+    }
+    if (activeModal === 'classification') {
+        const options = getClassificationOptions(myProfile.gender);
+        return (
+            <div className="space-y-1">
+                {options.map(option => (
+                    <button key={option} onClick={() => { updateProfile('classification', option); setActiveModal(null); }} className={`w-full text-left p-4 rounded-xl flex justify-between items-center ${myProfile.classification === option ? 'bg-brand-primary/20 text-brand-primary font-bold border border-brand-primary/50' : 'text-gray-300 hover:bg-white/5'}`}>{option}{myProfile.classification === option && <Check size={18} />}</button>
+                ))}
+            </div>
+        );
+    }
+    if (activeModal === 'billSplit') {
+        const options = getBillSplitOptions(myProfile.gender);
+        return (
+            <div className="space-y-1">
+                {options.map(option => (
+                    <button key={option} onClick={() => { updateProfile('billSplit', option); setActiveModal(null); }} className={`w-full text-left p-4 rounded-xl flex justify-between items-center ${myProfile.billSplit === option ? 'bg-brand-primary/20 text-brand-primary font-bold border border-brand-primary/50' : 'text-gray-300 hover:bg-white/5'}`}>{option}{myProfile.billSplit === option && <Check size={18} />}</button>
+                ))}
+            </div>
+        );
+    }
+    if (activeModal === 'availableToday') {
+        const options = ['Quero sair hoje', 'Outro dia eu saio'];
+        const selected = myProfile.availableToday === true ? options[0] : myProfile.availableToday === false ? options[1] : '';
+        return (
+            <div className="space-y-1">
+                {options.map(option => (
+                    <button key={option} onClick={() => { updateProfile('availableToday', option === 'Quero sair hoje'); setActiveModal(null); }} className={`w-full text-left p-4 rounded-xl flex justify-between items-center ${selected === option ? 'bg-brand-primary/20 text-brand-primary font-bold border border-brand-primary/50' : 'text-gray-300 hover:bg-white/5'}`}>{option}{selected === option && <Check size={18} />}</button>
+                ))}
             </div>
         );
     }
@@ -475,26 +531,28 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
             {/* Tags / Interests */}
             <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                    <h2 className="text-white font-bold text-base">Tags Principais</h2>
+                    <h2 className="text-white font-bold text-base">Tag Atual</h2>
                     <button onClick={() => setActiveModal('interests')} className="text-brand-primary text-xs font-bold uppercase hover:underline">Editar</button>
                 </div>
                 <div className="bg-brand-card p-4 rounded-xl border border-white/5 flex flex-wrap gap-2 min-h-[60px]">
-                    {interests.map(tag => (
-                         <span key={tag} className="px-3 py-1 rounded-full text-xs border flex items-center gap-1 transition-colors bg-brand-primary border-brand-primary text-white">{tag}</span>
-                    ))}
-                    <button onClick={() => setActiveModal('interests')} className="px-3 py-1 border border-dashed border-gray-600 rounded-full text-xs text-gray-500 hover:text-white hover:border-white transition-colors">+ Adicionar</button>
+                    {currentTag ? (
+                        <span className="px-3 py-1 rounded-full text-xs border flex items-center gap-1 transition-colors bg-brand-primary border-brand-primary text-white">{currentTag}</span>
+                    ) : (
+                        <button onClick={() => setActiveModal('interests')} className="px-3 py-1 border border-dashed border-gray-600 rounded-full text-xs text-gray-500 hover:text-white hover:border-white transition-colors">+ Adicionar</button>
+                    )}
                 </div>
             </div>
 
             {/* More Details Sections */}
             <div className="space-y-1 pt-2">
                 <h2 className="text-gray-500 font-bold text-xs uppercase px-2 mb-2 tracking-wider">Informações Básicas</h2>
-                <ListItem label="Intenção" value={profileData.intention} icon={Users} onClick={() => setActiveModal('intention')} />
-                <ListItem label="Gênero" value={myProfile.gender} icon={User} onClick={() => setActiveModal('gender')} />
-                <ListItem label="Tenho interesse em" value={myProfile.lookingFor.join(', ')} icon={Heart} onClick={() => setActiveModal('lookingFor')} />
-                <ListItem label="Pronomes" value={profileData.pronouns || "Adicionar"} icon={User} onClick={() => setActiveModal('pronouns')} />
-                <ListItem label="Altura" value={profileData.height || "Adicionar"} icon={Ruler} onClick={() => setActiveModal('height')} />
+                <ListItem label="Você é" value={myProfile.gender} icon={User} onClick={() => setActiveModal('gender')} />
+                <ListItem label="Você procura por" value={myProfile.lookingFor.join(', ')} icon={Heart} onClick={() => setActiveModal('lookingFor')} />
+                <ListItem label="Altura" value={myProfile.height || "Adicionar"} icon={Ruler} onClick={() => setActiveModal('height')} />
                 <ListItem label="Relacionamento" value={profileData.relationship} icon={HeartHandshake} onClick={() => setActiveModal('relationship')} />
+                <ListItem label="Como você se classifica?" value={myProfile.classification || "Adicionar"} icon={Trophy} onClick={() => setActiveModal('classification')} />
+                <ListItem label="No date você paga a conta ou racha a conta?" value={myProfile.billSplit || "Adicionar"} icon={HeartHandshake} onClick={() => setActiveModal('billSplit')} />
+                <ListItem label="Está disponível para um date hoje?" value={myProfile.availableToday === true ? 'Quero sair hoje' : myProfile.availableToday === false ? 'Outro dia eu saio' : 'Adicionar'} icon={Sun} onClick={() => setActiveModal('availableToday')} />
             </div>
 
             {/* Mais sobre mim */}
@@ -504,8 +562,6 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
                 <ListItem label="Formação" value={profileData.education} icon={GraduationCap} onClick={() => setActiveModal('education')} />
                 <ListItem label="Família" value={profileData.family} icon={Users} onClick={() => setActiveModal('family')} />
                 <ListItem label="Personalidade" value={profileData.personality || "Adicionar"} icon={Smile} onClick={() => setActiveModal('personality')} />
-                <ListItem label="Estilo de comunicação" value={profileData.communication || "Adicionar"} icon={MessageCircle} onClick={() => setActiveModal('communication')} />
-                <ListItem label="Linguagem do amor" value={profileData.loveLanguage || "Adicionar"} icon={Heart} onClick={() => setActiveModal('loveLanguage')} />
             </div>
 
             {/* Estilo de vida */}

@@ -45,12 +45,30 @@ export const LOCATIONS = {
   'DF': ['Brasília']
 };
 
-export const GENDER_OPTIONS = ['Homem', 'Mulher', 'Homem Trans', 'Mulher Trans', 'Não-binário', 'Agênero', 'Gênero Fluido', 'Queer', 'Outro'];
+export const GENDER_OPTIONS = [
+  'Homem Hétero',
+  'Homem Bi',
+  'Homem Gay',
+  'Homem Trans',
+  'Mulher Hétero',
+  'Mulher Bi',
+  'Mulher Lésbica',
+  'Mulher Trans',
+  'Outro'
+];
 
-// Combined options: Todos + GENDER_OPTIONS
-export const LOOKING_FOR_OPTIONS = ['Todos', ...GENDER_OPTIONS];
+export const LOOKING_FOR_OPTIONS = [...GENDER_OPTIONS];
 
-export const RELATIONSHIP_OPTIONS = ['Monogamia', 'Não-monogamia', 'Poliamor', 'Aberto', 'Outro'];
+export const RELATIONSHIP_OPTIONS = [
+  'Casamento',
+  'Namoro',
+  'Amizade colorida',
+  'Peguete',
+  'Um pente e rala',
+  'Trisal',
+  'Suruba',
+  'Nem eu sei o que quero'
+];
 
 export const MOCK_PROFILES: UserProfile[] = [
   {
@@ -65,6 +83,10 @@ export const MOCK_PROFILES: UserProfile[] = [
       'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=400&q=80'
     ],
     tags: ['Jogar videogame', 'Rock e Alterna', 'Japa'],
+    currentTag: 'Jogar videogame',
+    classification: 'Pobre Premium',
+    billSplit: 'Racho a conta',
+    availableToday: true,
     rankingScore: 9.2,
     job: 'Designer UX',
     sign: 'Áries',
@@ -96,6 +118,10 @@ export const MOCK_PROFILES: UserProfile[] = [
       'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=400&q=80'
     ],
     tags: ['Tomar um café', 'Praia e água de côco', 'Vinho à dois'],
+    currentTag: 'Tomar um café',
+    classification: 'Rica',
+    billSplit: 'Sou uma princesa, meu date paga a conta',
+    availableToday: false,
     rankingScore: 8.5,
     job: 'Gerente de Marketing',
     sign: 'Libra',
@@ -127,6 +153,10 @@ export const MOCK_PROFILES: UserProfile[] = [
       'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80'
     ],
     tags: ['Praia e água de côco', 'Boate', 'Sambinha e pagode'],
+    currentTag: 'Sambinha e pagode',
+    classification: 'Dublê de rica',
+    billSplit: 'Pago a conta',
+    availableToday: true,
     rankingScore: 9.8,
     job: 'Estudante',
     sign: 'Leão',
@@ -157,6 +187,10 @@ export const MOCK_PROFILES: UserProfile[] = [
       'https://images.unsplash.com/photo-1523475472560-d2df97ec485c?auto=format&fit=crop&w=400&q=80'
     ],
     tags: ['Cinema e pipoca', 'Passear com o totó', 'Teatro'],
+    currentTag: 'Cinema e pipoca',
+    classification: 'Zilionária',
+    billSplit: 'Racho a conta',
+    availableToday: false,
     rankingScore: 7.9,
     job: 'Arquiteta',
     sign: 'Virgem',

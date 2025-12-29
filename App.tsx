@@ -42,7 +42,12 @@ const App: React.FC = () => {
     images: ['https://picsum.photos/400/600?random=99', 'https://picsum.photos/400/600?random=100'],
     bio: 'Designer de dia, gamer à noite. Procurando alguém para me carregar nas rankeadas.',
     rankingEnabled: true,
-    loginMethod: 'google'
+    loginMethod: 'google',
+    height: '',
+    currentTag: 'Jogar videogame',
+    classification: '',
+    billSplit: '',
+    availableToday: false
   });
 
   // Report System State

@@ -7,6 +7,7 @@ export interface UserProfile {
   distance: number; // in km
   images: string[];
   tags: string[];
+  currentTag?: string;
   rankingScore: number; // 0-10
   isPremium?: boolean;
   job?: string;
@@ -16,6 +17,9 @@ export interface UserProfile {
   education?: string;
   intention?: string;
   relationship?: string;
+  classification?: string;
+  billSplit?: string;
+  availableToday?: boolean;
   family?: string;
   communication?: string;
   loveLanguage?: string;
@@ -40,6 +44,11 @@ export interface MyProfile {
   bio: string;
   rankingEnabled: boolean;
   loginMethod: 'email' | 'google' | 'facebook';
+  height?: string;
+  currentTag?: string;
+  classification?: string;
+  billSplit?: string;
+  availableToday?: boolean;
   // ... other details
 }
 
