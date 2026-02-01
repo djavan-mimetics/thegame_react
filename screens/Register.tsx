@@ -105,6 +105,10 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
   const [activePhotoIndex, setActivePhotoIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [step]);
+
     const handleNext = () => setStep(prev => prev + 1);
   const handleBack = () => {
     if (step === 0) onNavigate(AppScreen.WELCOME);

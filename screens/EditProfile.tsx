@@ -609,6 +609,15 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
                 <ListItem label="Hábitos de sono" value={profileData.sleep || "Adicionar"} icon={Moon} onClick={() => setActiveModal('sleep')} />
             </div>
 
+            <div className="pt-6">
+                <button
+                    onClick={() => onNavigate(AppScreen.HOME)}
+                    className="w-full py-4 bg-brand-primary rounded-full text-white font-bold hover:opacity-90 transition-opacity"
+                >
+                    Concluir
+                </button>
+            </div>
+
           </div>
       </div>
 
