@@ -585,8 +585,8 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
                 <ListItem label="Altura" value={myProfile.height || "Adicionar"} icon={Ruler} onClick={() => setActiveModal('height')} />
                 <ListItem label="Relacionamento" value={profileData.relationship} icon={HeartHandshake} onClick={() => setActiveModal('relationship')} />
                 <ListItem label="Como você se classifica?" value={myProfile.classification || "Adicionar"} icon={Trophy} onClick={() => setActiveModal('classification')} />
-                <ListItem label="No date você paga a conta ou racha a conta?" value={myProfile.billSplit || "Adicionar"} icon={HeartHandshake} onClick={() => setActiveModal('billSplit')} />
-                <ListItem label="Está disponível para um date hoje?" value={myProfile.availableToday === true ? 'Quero sair hoje' : myProfile.availableToday === false ? 'Outro dia eu saio' : 'Adicionar'} icon={Sun} onClick={() => setActiveModal('availableToday')} />
+                <ListItem label="No date você paga ou racha a conta?" value={myProfile.billSplit || "Adicionar"} icon={HeartHandshake} onClick={() => setActiveModal('billSplit')} split />
+                <ListItem label="Está disponível para um date hoje?" value={myProfile.availableToday === true ? 'Quero sair hoje' : myProfile.availableToday === false ? 'Outro dia eu saio' : 'Adicionar'} icon={Sun} onClick={() => setActiveModal('availableToday')} split />
             </div>
 
             {/* Mais sobre mim */}
@@ -926,15 +926,16 @@ const PhotoEditor = ({ imageSrc, onSave, onCancel }: { imageSrc: string, onSave:
     );
 };
 
-const ListItem = ({ label, value, icon: Icon, onClick }: { label: string, value: string, icon: any, onClick: () => void }) => (
+const ListItem = ({ label, value, icon: Icon, onClick, split }: { label: string, value: string, icon: any, onClick: () => void, split?: boolean }) => (
     <button onClick={onClick} className="w-full flex items-center justify-between py-4 px-4 border-b border-gray-800/50 hover:bg-white/5 transition-colors group">
-        <div className="flex items-center gap-3">
-            <Icon size={20} className="text-gray-500 group-hover:text-brand-primary transition-colors" />
-            <span className="text-gray-200 text-sm font-medium">{label}</span>
+        <div className={`flex items-center gap-3 min-w-0 ${split ? 'basis-[45%]' : ''}`}>
+            <Icon size={20} className="text-gray-500 group-hover:text-brand-primary transition-colors shrink-0" />
+            <span className={`text-gray-200 text-sm font-medium ${split ? 'leading-snug' : ''}`}>{label}</span>
         </div>
-        <div className="flex items-center gap-2">
-            <span className={`${value === 'Vazio' || value === 'Adicionar' || value === 'Selecionar' ? 'text-gray-600' : 'text-white'} text-sm truncate max-w-[150px] text-right`}>{value}</span>
-            <ChevronRight size={16} className="text-gray-700 group-hover:text-gray-500" />
+        {split && <div className="basis-[10%]" />}
+        <div className={`flex items-center gap-2 min-w-0 ${split ? 'basis-[45%] justify-end' : ''}`}>
+            <span className={`${value === 'Vazio' || value === 'Adicionar' || value === 'Selecionar' ? 'text-gray-600' : 'text-white'} text-sm truncate ${split ? 'max-w-full' : 'max-w-[150px]'} text-right`}>{value}</span>
+            <ChevronRight size={16} className="text-gray-700 group-hover:text-gray-500 shrink-0" />
         </div>
     </button>
 );
