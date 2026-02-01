@@ -9,7 +9,6 @@ import { BottomNav } from './components/BottomNav';
 import { Ranking } from './screens/Ranking';
 import { Likes } from './screens/Likes';
 import { Chat } from './screens/Chat';
-import { Profile } from './screens/Profile';
 import { Terms } from './screens/Terms';
 import { Privacy } from './screens/Privacy';
 import { EditProfile } from './screens/EditProfile';
@@ -102,7 +101,7 @@ const App: React.FC = () => {
     AppScreen.RANKING, 
     AppScreen.LIKES, 
     AppScreen.CHAT, 
-    AppScreen.PROFILE
+    AppScreen.EDIT_PROFILE
   ].includes(currentScreen);
 
   return (
@@ -117,7 +116,7 @@ const App: React.FC = () => {
       {currentScreen === AppScreen.RANKING && <Ranking />}
       {currentScreen === AppScreen.LIKES && <Likes isPremium={isPremium} onNavigate={navigate} />}
       {currentScreen === AppScreen.CHAT && <Chat onNavigate={navigate} setReportContext={(name) => setReportContext({name, date: new Date().toLocaleDateString()})} />}
-      {currentScreen === AppScreen.PROFILE && <Profile onNavigate={navigate} isPremium={isPremium} myProfile={myProfile} completion={calculateCompletion()} />}
+      {currentScreen === AppScreen.PROFILE && <EditProfile onNavigate={navigate} myProfile={myProfile} updateProfile={updateProfile} completion={calculateCompletion()} />}
       
       {currentScreen === AppScreen.TERMS && <Terms onNavigate={navigate} />}
       {currentScreen === AppScreen.PRIVACY && <Privacy onNavigate={navigate} />}

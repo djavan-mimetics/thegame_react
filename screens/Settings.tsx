@@ -16,7 +16,7 @@ export const Settings: React.FC<SettingsProps> = ({ onNavigate }) => {
     <div className="h-full flex flex-col bg-brand-dark overflow-y-auto no-scrollbar">
       {/* Header */}
       <div className="flex items-center p-4 sticky top-0 bg-brand-dark z-20 border-b border-white/5">
-        <button onClick={() => onNavigate(AppScreen.PROFILE)} className="text-gray-400 p-2 -ml-2">
+        <button onClick={() => onNavigate(AppScreen.EDIT_PROFILE)} className="text-gray-400 p-2 -ml-2">
             <ArrowLeft />
         </button>
         <h1 className="font-bold text-white text-lg ml-2">Ajustes de descoberta</h1>

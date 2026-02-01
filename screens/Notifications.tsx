@@ -19,7 +19,7 @@ export const Notifications: React.FC<NotificationsProps> = ({ onNavigate, items 
     <div className="h-full flex flex-col bg-brand-dark text-white pt-12 pb-8">
       <header className="px-4 mb-8 flex items-center gap-4">
         <button
-          onClick={() => onNavigate(AppScreen.PROFILE)}
+          onClick={() => onNavigate(AppScreen.EDIT_PROFILE)}
           className="p-2 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
           aria-label="Voltar"
         >

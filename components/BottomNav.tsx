@@ -13,7 +13,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentScreen, onNavigate 
     { icon: Trophy, screen: AppScreen.RANKING, label: 'Ranking' },
     { icon: Heart, screen: AppScreen.LIKES, label: 'Curtidas' },
     { icon: MessageCircle, screen: AppScreen.CHAT, label: 'Chat' },
-    { icon: User, screen: AppScreen.PROFILE, label: 'Perfil' },
+    { icon: User, screen: AppScreen.EDIT_PROFILE, label: 'Perfil' },
   ];
 
   return (

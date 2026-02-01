@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AppScreen, MyProfile } from '../types';
 import { TAGS_LIST, LOCATIONS } from '../constants';
-import { ChevronLeft, Plus, ChevronRight, Moon, GraduationCap, Users, User, Ruler, HeartHandshake, Smile, Heart, Dog, Wine, Cigarette, Dumbbell, Pizza, X, Check, Sun, Trash2, Camera, Image as ImageIcon, RotateCcw, Facebook, Mail, Trophy, Calendar, MapPin, ChevronDown } from 'lucide-react';
+import { ChevronLeft, Plus, ChevronRight, Moon, GraduationCap, Users, User, Ruler, HeartHandshake, Smile, Heart, Dog, Wine, Cigarette, Dumbbell, Pizza, X, Check, Sun, Trash2, Camera, Image as ImageIcon, RotateCcw, Facebook, Mail, Trophy, Calendar, MapPin, ChevronDown, Bell, Settings as SettingsIcon, Zap } from 'lucide-react';
 import { Modal } from '../components/Modal';
 
 interface EditProfileProps {
@@ -322,35 +322,73 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
 
             {/* Persistent Header */}
             <div className="flex items-center justify-between p-4 bg-brand-dark/95 backdrop-blur-md border-b border-white/5 shadow-lg shadow-black/20 z-30">
-                <button onClick={() => onNavigate(AppScreen.PROFILE)} className="text-gray-400 p-2 hover:text-white"><ChevronLeft /></button>
+                <button onClick={() => onNavigate(AppScreen.HOME)} className="text-gray-400 p-2 hover:text-white"><ChevronLeft /></button>
                 <div className="text-center">
-                        <h1 className="font-bold text-white text-lg">Configurações</h1>
+                        <h1 className="font-bold text-white text-lg">Perfil</h1>
                         <p className="text-[10px] text-brand-primary font-bold">{completion}% Concluído</p>
                 </div>
-                <button onClick={() => onNavigate(AppScreen.PROFILE)} className="text-brand-primary font-bold text-sm p-2 hover:opacity-80">Concluído</button>
+                <div className="flex gap-3">
+                    <button
+                        onClick={() => onNavigate(AppScreen.NOTIFICATIONS)}
+                        className="p-2 rounded-full border border-white/10 text-gray-400 hover:text-white hover:border-white/40 transition-colors"
+                        aria-label="Abrir notificações"
+                    >
+                        <Bell size={18} />
+                    </button>
+                    <button
+                        onClick={() => onNavigate(AppScreen.SECURITY)}
+                        className="p-2 rounded-full border border-white/10 text-gray-400 hover:text-white hover:border-white/40 transition-colors"
+                        aria-label="Abrir central de segurança"
+                    >
+                        <SettingsIcon size={18} />
+                    </button>
+                </div>
             </div>
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto no-scrollbar pb-20">
 
                     <div className="p-4 space-y-8">
-            
-            {/* Sliders & Premium */}
+
+            {/* Estatísticas + Premium */}
             <div className="space-y-6">
-                 {/* Premium Banner */}
-                 <div onClick={() => onNavigate(AppScreen.PREMIUM)} className="relative group cursor-pointer transition-transform active:scale-[0.98]">
-                    <div className="absolute -left-1 top-0 bottom-0 w-1 bg-brand-primary rounded-l-full"></div>
-                    <div className="pl-4">
-                        <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                                <Heart className="text-brand-primary fill-brand-primary" size={20} />
-                                <h3 className="text-white font-bold text-lg">Premium</h3>
-                            </div>
-                            <span className="text-brand-primary text-sm font-bold flex items-center hover:underline">Funções Premium <ChevronRight size={14} /></span>
-                        </div>
-                        <p className="text-gray-400 text-xs">Acesse recursos exclusivos e produtos premium</p>
+                <div className="flex items-center divide-x divide-gray-700 w-full bg-brand-card rounded-xl p-4 border border-white/5">
+                    <div className="flex-1 flex flex-col items-center">
+                        <span className="font-bold text-brand-primary text-lg">{completion}%</span>
+                        <span className="text-xs text-gray-500 uppercase">Completo</span>
                     </div>
-                 </div>
+                    <div className="flex-1 flex flex-col items-center">
+                        <span className="font-bold text-white text-lg">42</span>
+                        <span className="text-xs text-gray-500 uppercase">Matches</span>
+                    </div>
+                    <div className="flex-1 flex flex-col items-center">
+                        <span className="font-bold text-white text-lg">7.4</span>
+                        <span className="text-xs text-gray-500 uppercase">Pontos</span>
+                    </div>
+                </div>
+
+                <div className="bg-gradient-to-r from-brand-secondary to-brand-accent p-6 rounded-2xl relative overflow-hidden shadow-lg shadow-brand-primary/20">
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-2 mb-2">
+                             <Zap className="text-yellow-300 fill-yellow-300" size={20} />
+                             <h3 className="text-white font-extrabold text-lg italic tracking-wider">PREMIUM</h3>
+                        </div>
+                        <p className="text-white/90 text-sm mb-4 max-w-[70%]">
+                            Veja quem curtiu você, swipes ilimitados e mais.
+                        </p>
+                        <button
+                            onClick={() => onNavigate(AppScreen.PREMIUM)}
+                            className="bg-white text-brand-accent font-bold py-2 px-6 rounded-full text-sm hover:bg-gray-100 transition-colors"
+                        >
+                            Assinar Agora
+                        </button>
+                    </div>
+                    <div className="absolute right-[-20px] top-[-20px] w-32 h-32 bg-white/20 rounded-full blur-2xl" />
+                </div>
+            </div>
+
+            {/* Sliders */}
+            <div className="space-y-6">
 
                  {/* Age Range Slider */}
                  <div className="bg-brand-card rounded-xl p-4 border border-white/5">
