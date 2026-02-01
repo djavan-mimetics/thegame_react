@@ -187,8 +187,15 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
         
       {/* Floating Header - Z-Index 50 to be on top of gesture overlay */}
             <div className="absolute top-0 left-0 right-0 z-50 p-4 pt-6 flex justify-between items-start bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
-                <div className="flex items-center gap-2 pointer-events-auto bg-black/40 px-3 py-1 rounded-full border border-white/5">
+                <div className="flex flex-col items-start gap-2 pointer-events-auto w-fit">
+                    <div className="flex items-center gap-2 bg-black/40 px-3 py-1 rounded-full border border-white/5">
                         <img src={`${logoMark}?v=${__APP_BUILD_ID__}`} alt="The Game" className="h-6 w-auto object-contain" />
+                    </div>
+                    {currentProfile?.availableToday && (
+                        <span className="bg-gradient-to-tr from-brand-primary/80 to-brand-accent/80 text-white text-[14px] font-bold h-8 w-full rounded-full shadow-[0_0_14px_rgba(156,39,176,0.45)] border border-white/10 inline-flex items-center justify-center">
+                            Date Hoje
+                        </span>
+                    )}
                 </div>
         
         {/* Active Tag Button */}
@@ -255,9 +262,9 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
                         {/* Header Row (Nome, Idade, Altura - Relacionamento + Info Button) */}
                         <div className="w-full flex items-center justify-between mb-2">
                             <div className="min-w-0">
-                                <h2 className="text-4xl font-extrabold text-white drop-shadow-md truncate">
+                                <h2 className="text-[34px] font-semibold text-white drop-shadow-md truncate">
                                     {currentProfile.name},
-                                    <span className="text-2xl font-medium text-gray-200 drop-shadow-md">
+                                    <span className="text-[23px] font-medium text-gray-200 drop-shadow-md">
                                         {' '}{currentProfile.age}{currentProfile.height ? `, ${currentProfile.height}` : ''}
                                     </span>
                                 </h2>

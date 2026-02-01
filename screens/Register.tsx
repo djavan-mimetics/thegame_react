@@ -22,8 +22,6 @@ const LogoFooter = () => (
 );
 
 const CLASSIFICATION_OPTIONS_MASC = [
-    'Mendigo',
-    'Pobre',
     'Pobre Premium',
     'Dublê de Rico',
     'Velho da Lancha',
@@ -33,8 +31,6 @@ const CLASSIFICATION_OPTIONS_MASC = [
 ];
 
 const CLASSIFICATION_OPTIONS_FEM = [
-    'Mendiga',
-    'Pobre',
     'Pobre Premium',
     'Dublê de rica',
     'Rica',
@@ -62,6 +58,22 @@ const getBillSplitOptions = (gender: string) => {
     if (group === 'fem') return [...base, 'Sou uma princesa, meu date paga a conta'];
     if (group === 'masc') return [...base, 'Sou um princeso, meu date paga a conta'];
     return [...base, 'Sou uma princesa, meu date paga a conta', 'Sou um princeso, meu date paga a conta'];
+};
+
+const getOrderedLookingForOptions = (gender: string) => {
+    const group = getGenderGroup(gender);
+    const score = (opt: string) => {
+        const o = (opt || '').toLowerCase();
+        const isFem = o.startsWith('mulher');
+        const isMasc = o.startsWith('homem');
+
+        // Regra: se "Você é" for masc, opções femininas primeiro (e vice-versa).
+        if (group === 'masc') return isFem ? 0 : (isMasc ? 2 : 1);
+        if (group === 'fem') return isMasc ? 0 : (isFem ? 2 : 1);
+        return 0;
+    };
+
+    return [...LOOKING_FOR_OPTIONS].sort((a, b) => score(a) - score(b));
 };
 
 export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
@@ -93,7 +105,7 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
   const [activePhotoIndex, setActivePhotoIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleNext = () => setStep(step + 1);
+    const handleNext = () => setStep(prev => prev + 1);
   const handleBack = () => {
     if (step === 0) onNavigate(AppScreen.WELCOME);
     else setStep(step - 1);
@@ -406,12 +418,15 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
   if (step === 5) {
     return (
         <WizardLayout title="Você é" subtitle="Como você se identifica?" onBack={handleBack}>
-           <div className="space-y-3 overflow-y-auto max-h-[60vh] pr-1 no-scrollbar">
-               {GENDER_OPTIONS.map(g => (
-                   <button key={g} onClick={() => { updateData('gender', g); handleNext(); }} className={`w-full p-4 rounded-xl border flex justify-between items-center transition-all ${formData.gender === g ? 'bg-brand-primary/20 border-brand-primary text-white font-bold' : 'bg-brand-card border-gray-800 text-gray-300 hover:bg-gray-800'}`}>
-                       {g} {formData.gender === g && <Check size={20} className="text-brand-primary" />}
-                   </button>
-               ))}
+           <div className="flex flex-col min-h-0">
+               <div className="space-y-3 overflow-y-auto pr-1 pb-4 no-scrollbar flex-1 min-h-0">
+                   {GENDER_OPTIONS.map(g => (
+                       <button key={g} onClick={() => { updateData('gender', g); }} className={`w-full p-4 rounded-xl border flex justify-between items-center transition-all ${formData.gender === g ? 'bg-brand-primary/20 border-brand-primary text-white font-bold' : 'bg-brand-card border-gray-800 text-gray-300 hover:bg-gray-800'}`}>
+                           {g} {formData.gender === g && <Check size={20} className="text-brand-primary" />}
+                       </button>
+                   ))}
+               </div>
+               <Button fullWidth onClick={handleNext} disabled={!formData.gender} className="mt-6">Continuar</Button>
            </div>
         </WizardLayout>
     );
@@ -429,17 +444,21 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
           else current.push(opt);
           updateData('lookingFor', current);
       };
+
+      const options = getOrderedLookingForOptions(formData.gender);
       
       return (
         <WizardLayout title="Você procura por" subtitle="Quem você quer conhecer?" onBack={handleBack}>
-           <div className="space-y-3 overflow-y-auto max-h-[52vh] pr-1 pb-4 no-scrollbar">
-               {LOOKING_FOR_OPTIONS.map(opt => (
-                   <button key={opt} onClick={() => toggle(opt)} className={`w-full p-4 rounded-xl border flex justify-between items-center transition-all ${formData.lookingFor.includes(opt) ? 'bg-brand-primary/20 border-brand-primary text-white font-bold' : 'bg-brand-card border-gray-800 text-gray-300 hover:bg-gray-800'}`}>
-                       {opt} {formData.lookingFor.includes(opt) && <Check size={20} className="text-brand-primary" />}
-                   </button>
-               ))}
+           <div className="flex flex-col min-h-0">
+               <div className="space-y-3 overflow-y-auto pr-1 pb-4 no-scrollbar flex-1 min-h-0">
+                   {options.map(opt => (
+                       <button key={opt} onClick={() => toggle(opt)} className={`w-full p-4 rounded-xl border flex justify-between items-center transition-all ${formData.lookingFor.includes(opt) ? 'bg-brand-primary/20 border-brand-primary text-white font-bold' : 'bg-brand-card border-gray-800 text-gray-300 hover:bg-gray-800'}`}>
+                           {opt} {formData.lookingFor.includes(opt) && <Check size={20} className="text-brand-primary" />}
+                       </button>
+                   ))}
+               </div>
+               <Button fullWidth onClick={handleNext} disabled={formData.lookingFor.length === 0} className="mt-6">Continuar</Button>
            </div>
-           <Button fullWidth onClick={handleNext} disabled={formData.lookingFor.length === 0} className="mt-8">Continuar</Button>
         </WizardLayout>
       );
   }
@@ -448,12 +467,15 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
   if (step === 7) {
       return (
         <WizardLayout title="Relacionamento" subtitle="O que você busca?" onBack={handleBack}>
-           <div className="space-y-3">
-               {RELATIONSHIP_OPTIONS.map(r => (
-                   <button key={r} onClick={() => { updateData('relationship', r); handleNext(); }} className={`w-full p-4 rounded-xl border flex justify-between items-center transition-all ${formData.relationship === r ? 'bg-brand-primary/20 border-brand-primary text-white font-bold' : 'bg-brand-card border-gray-800 text-gray-300 hover:bg-gray-800'}`}>
-                       {r} {formData.relationship === r && <Check size={20} className="text-brand-primary" />}
-                   </button>
-               ))}
+           <div className="flex flex-col min-h-0">
+               <div className="space-y-3 overflow-y-auto pr-1 pb-4 no-scrollbar flex-1 min-h-0">
+                   {RELATIONSHIP_OPTIONS.map(r => (
+                       <button key={r} onClick={() => { updateData('relationship', r); }} className={`w-full p-4 rounded-xl border flex justify-between items-center transition-all ${formData.relationship === r ? 'bg-brand-primary/20 border-brand-primary text-white font-bold' : 'bg-brand-card border-gray-800 text-gray-300 hover:bg-gray-800'}`}>
+                           {r} {formData.relationship === r && <Check size={20} className="text-brand-primary" />}
+                       </button>
+                   ))}
+               </div>
+               <Button fullWidth onClick={handleNext} disabled={!formData.relationship} className="mt-6">Continuar</Button>
            </div>
         </WizardLayout>
       );
@@ -464,12 +486,15 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
       const options = getClassificationOptions(formData.gender);
       return (
         <WizardLayout title="Como você se classifica?" subtitle="Escolha uma opção" onBack={handleBack}>
-           <div className="space-y-3 overflow-y-auto max-h-[60vh] pr-1 no-scrollbar">
-               {options.map(opt => (
-                   <button key={opt} onClick={() => { updateData('classification', opt); handleNext(); }} className={`w-full p-4 rounded-xl border flex justify-between items-center transition-all ${formData.classification === opt ? 'bg-brand-primary/20 border-brand-primary text-white font-bold' : 'bg-brand-card border-gray-800 text-gray-300 hover:bg-gray-800'}`}>
-                       {opt} {formData.classification === opt && <Check size={20} className="text-brand-primary" />}
-                   </button>
-               ))}
+           <div className="flex flex-col min-h-0">
+               <div className="space-y-3 overflow-y-auto pr-1 pb-4 no-scrollbar flex-1 min-h-0">
+                   {options.map(opt => (
+                       <button key={opt} onClick={() => { updateData('classification', opt); }} className={`w-full p-4 rounded-xl border flex justify-between items-center transition-all ${formData.classification === opt ? 'bg-brand-primary/20 border-brand-primary text-white font-bold' : 'bg-brand-card border-gray-800 text-gray-300 hover:bg-gray-800'}`}>
+                           {opt} {formData.classification === opt && <Check size={20} className="text-brand-primary" />}
+                       </button>
+                   ))}
+               </div>
+               <Button fullWidth onClick={handleNext} disabled={!formData.classification} className="mt-6">Continuar</Button>
            </div>
         </WizardLayout>
       );
@@ -480,12 +505,15 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
       const options = getBillSplitOptions(formData.gender);
       return (
         <WizardLayout title="No date você paga ou racha a conta?" subtitle="Escolha uma opção" onBack={handleBack}>
-           <div className="space-y-3 overflow-y-auto max-h-[60vh] pr-1 no-scrollbar">
-               {options.map(opt => (
-                   <button key={opt} onClick={() => { updateData('billSplit', opt); handleNext(); }} className={`w-full p-4 rounded-xl border flex justify-between items-center transition-all ${formData.billSplit === opt ? 'bg-brand-primary/20 border-brand-primary text-white font-bold' : 'bg-brand-card border-gray-800 text-gray-300 hover:bg-gray-800'}`}>
-                       {opt} {formData.billSplit === opt && <Check size={20} className="text-brand-primary" />}
-                   </button>
-               ))}
+           <div className="flex flex-col min-h-0">
+               <div className="space-y-3 overflow-y-auto pr-1 pb-4 no-scrollbar flex-1 min-h-0">
+                   {options.map(opt => (
+                       <button key={opt} onClick={() => { updateData('billSplit', opt); }} className={`w-full p-4 rounded-xl border flex justify-between items-center transition-all ${formData.billSplit === opt ? 'bg-brand-primary/20 border-brand-primary text-white font-bold' : 'bg-brand-card border-gray-800 text-gray-300 hover:bg-gray-800'}`}>
+                           {opt} {formData.billSplit === opt && <Check size={20} className="text-brand-primary" />}
+                       </button>
+                   ))}
+               </div>
+               <Button fullWidth onClick={handleNext} disabled={!formData.billSplit} className="mt-6">Continuar</Button>
            </div>
         </WizardLayout>
       );
@@ -497,7 +525,7 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
                 <div className="min-h-screen flex flex-col bg-brand-dark overflow-hidden relative">
             <input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={onFileSelect} />
             
-            <WizardLayout title="Suas Fotos" subtitle="Adicione pelo menos 2 fotos" onBack={handleBack}>
+            <WizardLayout title="Suas Fotos" subtitle="Adicione pelo menos 1 foto" onBack={handleBack}>
                 <div className="grid grid-cols-3 gap-3 mb-6">
                         {[0, 1, 2, 3, 4, 5].map(i => {
                             const hasPhoto = i < formData.images.length;
@@ -519,7 +547,7 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
                         })}
                 </div>
                 <p className="text-xs text-gray-500 text-center mb-6">Toque para adicionar/remover. A primeira foto será a principal.</p>
-                <Button fullWidth onClick={handleNext} disabled={formData.images.length < 2} className="mt-auto">Concluir Cadastro</Button>
+                <Button fullWidth onClick={handleNext} disabled={formData.images.length < 1} className="mt-auto">Concluir Cadastro</Button>
             </WizardLayout>
 
             {/* Photo Source Modal */}
@@ -572,7 +600,7 @@ const WizardLayout = ({ title, subtitle, onBack, children }: { title: string, su
             <h1 className="text-3xl font-bold text-white mb-1">{title}</h1>
             <p className="text-gray-400 text-sm">{subtitle}</p>
         </div>
-        <div className="flex-1 overflow-y-auto no-scrollbar">
+        <div className="flex-1 min-h-0">
             {children}
         </div>
         <LogoFooter />
@@ -621,7 +649,6 @@ const PhotoEditor = ({ imageSrc, onSave, onCancel }: { imageSrc: string, onSave:
         if (!ctx) return;
 
         ctx.imageSmoothingEnabled = true;
-        // @ts-expect-error older browsers may not have this
         ctx.imageSmoothingQuality = 'high';
 
         ctx.fillStyle = '#000';

@@ -28,7 +28,7 @@ export const Welcome: React.FC<WelcomeProps> = ({ onNavigate }) => {
               className="relative z-10 w-64 h-64 object-contain drop-shadow-[0_0_25px_rgba(233,30,99,0.45)]" 
             />
           </div>
-          <p className="text-gray-200 text-lg font-small">
+          <p className="-mt-2 text-gray-200 text-lg font-small">
             O app onde o jogo é jogado.
           </p>
         </div>

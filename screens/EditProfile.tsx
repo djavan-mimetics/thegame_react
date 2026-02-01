@@ -51,8 +51,6 @@ const OPTIONS: Record<string, string[]> = {
 };
 
 const CLASSIFICATION_OPTIONS_MASC = [
-    'Mendigo',
-    'Pobre',
     'Pobre Premium',
     'Dublê de Rico',
     'Velho da Lancha',
@@ -62,8 +60,6 @@ const CLASSIFICATION_OPTIONS_MASC = [
 ];
 
 const CLASSIFICATION_OPTIONS_FEM = [
-    'Mendiga',
-    'Pobre',
     'Pobre Premium',
     'Dublê de rica',
     'Rica',
@@ -771,7 +767,6 @@ const PhotoEditor = ({ imageSrc, onSave, onCancel }: { imageSrc: string, onSave:
         if (!ctx) return;
 
         ctx.imageSmoothingEnabled = true;
-        // @ts-expect-error older browsers may not have this
         ctx.imageSmoothingQuality = 'high';
 
         ctx.fillStyle = '#000';
