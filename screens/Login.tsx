@@ -4,6 +4,8 @@ import { AppScreen } from '../types';
 import { Button } from '../components/Button';
 import { ArrowLeft, Mail, Facebook } from 'lucide-react';
 import logoQD from '../src/img/logo_qd.png';
+import { apiFetch } from '../apiClient';
+import { setSessionTokens } from '../authClient';
 
 interface LoginProps {
   onNavigate: (screen: AppScreen) => void;
@@ -13,10 +15,31 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginMethod, setLoginMethod] = useState<'selection' | 'email'>('selection');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    onNavigate(AppScreen.HOME);
+    setError('');
+    setIsSubmitting(true);
+    try {
+      const res = await apiFetch('/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      if (!res.ok) {
+        setError('Email ou senha invalidos.');
+        return;
+      }
+
+      const data = (await res.json()) as { accessToken: string; refreshToken: string };
+      await setSessionTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken });
+      onNavigate(AppScreen.HOME);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Google Icon Component (SVG)
@@ -126,8 +149,9 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
             </div>
 
             <Button fullWidth type="submit" className="mt-8">
-                Entrar
+              {isSubmitting ? 'Entrando...' : 'Entrar'}
             </Button>
+            {error && <p className="text-xs text-red-400 text-center">{error}</p>}
         </form>
       )}
       

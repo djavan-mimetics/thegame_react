@@ -60,6 +60,8 @@ export interface ChatPreview {
   lastMessage: string;
   timestamp: string;
   unread: number;
+  tags?: string[];
+  images?: string[];
 }
 
 export interface Message {

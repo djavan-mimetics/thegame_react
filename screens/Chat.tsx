@@ -1,10 +1,10 @@
 
 import React, { useEffect, useState } from 'react';
-import { MOCK_CHATS, MOCK_MESSAGES, MOCK_PROFILES } from '../constants';
 import { ChatPreview, AppScreen, Message } from '../types';
 import { Search, ChevronLeft, Send, Shield, X, ChevronRight, Heart } from 'lucide-react';
 import { Modal } from '../components/Modal';
 import appIcon from '../src/img/icon1024.png';
+import { apiFetch } from '../apiClient';
 
 const MY_INTEREST_TAGS = ['Jogar videogame', 'Praia e água de côco', 'Tomar um café', 'Netflix', 'Vinho à dois'];
 const gradientBubbleClass = 'bg-gradient-to-r from-brand-primary to-brand-accent text-white shadow-lg border border-white/10';
@@ -37,6 +37,7 @@ interface ChatProps {
 }
 
 export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
+    const [chats, setChats] = useState<ChatPreview[]>([]);
     const [selectedChat, setSelectedChat] = useState<ChatPreview | null>(null);
     const [messageText, setMessageText] = useState('');
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
@@ -44,16 +45,72 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
     const [galleryImages, setGalleryImages] = useState<string[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
     const [isComplimentModalOpen, setIsComplimentModalOpen] = useState(false);
+    const [isLoadingChats, setIsLoadingChats] = useState(false);
+    const [chatsError, setChatsError] = useState<string | null>(null);
+    const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+    const [messagesError, setMessagesError] = useState<string | null>(null);
 
-    const activeProfile = selectedChat ? MOCK_PROFILES.find(p => p.id === selectedChat.userId) : null;
+    const activeProfile = selectedChat ? { tags: selectedChat.tags || [], images: selectedChat.images || [] } : null;
     const complimentOptions = selectedChat ? createCompliments(selectedChat.name, activeProfile?.tags || []) : [];
 
     // Helper to get full profile images for the gallery
     const getChatProfileImages = () => {
-        if (activeProfile) return activeProfile.images;
+        if (activeProfile?.images?.length) return activeProfile.images;
         if (selectedChat) return [selectedChat.image];
         return [];
     };
+
+    const loadChats = async () => {
+        setIsLoadingChats(true);
+        setChatsError(null);
+        try {
+            const res = await apiFetch('/v1/chats');
+            if (!res.ok) {
+                setChatsError('Nao foi possivel carregar as conversas.');
+                return;
+            }
+            const data = (await res.json()) as { chats: ChatPreview[] };
+            setChats(data.chats || []);
+        } catch (err) {
+            setChatsError('Nao foi possivel carregar as conversas.');
+        } finally {
+            setIsLoadingChats(false);
+        }
+    };
+
+    const reloadMessages = async (chat: ChatPreview) => {
+        const tags = chat.tags || [];
+        const icebreaker: Message = {
+            id: `icebreaker-${chat.id}`,
+            senderId: chat.userId,
+            text: createIcebreaker(chat.name, tags),
+            timestamp: getTimestamp(),
+            isMe: false,
+            variant: 'icebreaker'
+        };
+
+        setIsLoadingMessages(true);
+        setMessagesError(null);
+        try {
+            const res = await apiFetch(`/v1/chats/${chat.id}/messages`);
+            if (!res.ok) {
+                setMessages([icebreaker]);
+                setMessagesError('Nao foi possivel carregar as mensagens.');
+                return;
+            }
+            const data = (await res.json()) as { messages: Message[] };
+            setMessages([icebreaker, ...(data.messages || [])]);
+        } catch (err) {
+            setMessages([icebreaker]);
+            setMessagesError('Nao foi possivel carregar as mensagens.');
+        } finally {
+            setIsLoadingMessages(false);
+        }
+    };
+
+    useEffect(() => {
+        loadChats();
+    }, []);
 
     const openGallery = (images: string[]) => {
         if (!images || images.length === 0) return;
@@ -68,19 +125,7 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
             return;
         }
 
-        const profile = MOCK_PROFILES.find(p => p.id === selectedChat.userId);
-        const tags = profile?.tags || [];
-        const icebreaker: Message = {
-            id: `icebreaker-${selectedChat.id}`,
-            senderId: selectedChat.userId,
-            text: createIcebreaker(selectedChat.name, tags),
-            timestamp: getTimestamp(),
-            isMe: false,
-            variant: 'icebreaker'
-        };
-
-        const history = MOCK_MESSAGES.slice(1);
-        setMessages([icebreaker, ...history]);
+        reloadMessages(selectedChat);
         setIsComplimentModalOpen(false);
         setIsGalleryOpen(false);
     }, [selectedChat]);
@@ -104,8 +149,14 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
 
     const handleSendMessage = () => {
         if (!messageText.trim()) return;
-        appendMessage(messageText);
+        const content = messageText;
         setMessageText('');
+        appendMessage(content);
+        apiFetch(`/v1/chats/${selectedChat?.id}/messages`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: content })
+        });
     };
 
     const handleSendCompliment = (text: string) => {
@@ -136,6 +187,7 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
 
     // Chat Detail View
     if (selectedChat) {
+        const headerImage = selectedChat.image || galleryImages[0] || '';
         return (
             <div className="min-h-screen min-h-[100dvh] flex flex-col bg-brand-dark">
                 {/* Chat Header */}
@@ -150,7 +202,7 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
                             onClick={() => openGallery(getChatProfileImages())}
                         >
                             <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-brand-primary/50 group-hover:border-brand-primary transition-colors">
-                                <img src={selectedChat.image} alt={selectedChat.name} className="w-full h-full object-cover" />
+                                <img src={headerImage} alt={selectedChat.name} className="w-full h-full object-cover" />
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-lg font-bold text-white leading-tight group-hover:text-brand-primary transition-colors">{selectedChat.name}</span>
@@ -186,6 +238,20 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
                     <div className="flex justify-center my-4">
                         <span className="text-xs text-gray-600 bg-white/5 px-3 py-1 rounded-full">Hoje</span>
                     </div>
+                    {isLoadingMessages && (
+                        <div className="text-center text-xs text-gray-500">Carregando mensagens...</div>
+                    )}
+                    {messagesError && (
+                        <div className="text-center text-xs text-red-300 flex flex-col items-center gap-2">
+                            <span>{messagesError}</span>
+                            <button
+                                onClick={() => selectedChat && reloadMessages(selectedChat)}
+                                className="rounded-full border border-red-400/40 px-3 py-1 text-[10px] font-bold text-red-100 hover:bg-red-500/10"
+                            >
+                                Tentar novamente
+                            </button>
+                        </div>
+                    )}
                     {messages.map((msg) => {
                         const bubbleClass = resolveBubbleClasses(msg);
                         const isAppMessage = msg.variant === 'icebreaker' || msg.variant === 'compliment' || msg.senderId === 'app';
@@ -329,7 +395,7 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
     }
 
     // Chat List View
-    const recentMatches = MOCK_PROFILES.slice(0, 6);
+    const recentMatches = chats.slice(0, 6);
 
     return (
         <div className="min-h-screen min-h-[100dvh] flex flex-col bg-brand-dark pt-10 px-4 pb-24 overflow-y-auto no-scrollbar">
@@ -354,10 +420,10 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
                          <button 
                             key={match.id} 
                             className="flex flex-col items-center min-w-[72px] cursor-pointer"
-                            onClick={() => openGallery(match.images)}
+                            onClick={() => openGallery(match.images || [])}
                          >
                             <div className="w-16 h-16 rounded-full border-2 border-brand-primary p-0.5 mb-2 relative">
-                                <img src={match.images[0]} className="w-full h-full rounded-full object-cover" alt={match.name} />
+                                <img src={match.images?.[0] || match.image} className="w-full h-full rounded-full object-cover" alt={match.name} />
                                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border border-black" />
                             </div>
                             <span className="text-xs text-gray-300">{match.name}</span>
@@ -369,11 +435,36 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
             {/* Message List */}
             <div>
                  <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Conversas</h2>
-                 <div className="space-y-6">
-                    {MOCK_CHATS.map((chat) => (
+                      {isLoadingChats && (
+                          <div className="text-sm text-gray-500">Carregando conversas...</div>
+                      )}
+                      {chatsError && (
+                        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200 flex items-center justify-between">
+                            <span>{chatsError}</span>
+                            <button
+                                onClick={loadChats}
+                                className="rounded-full border border-red-400/40 px-3 py-1 text-[10px] font-bold text-red-100 hover:bg-red-500/10"
+                            >
+                                Tentar novamente
+                            </button>
+                          </div>
+                      )}
+                      {!isLoadingChats && !chatsError && chats.length === 0 && (
+                        <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-gray-400 flex items-center justify-between">
+                            <span>Nenhuma conversa ainda.</span>
+                            <button
+                                onClick={loadChats}
+                                className="rounded-full border border-white/20 px-3 py-1 text-[10px] font-bold text-white/80 hover:bg-white/10"
+                            >
+                                Tentar novamente
+                            </button>
+                          </div>
+                      )}
+                      <div className="space-y-6">
+                          {chats.map((chat) => (
                         <div key={chat.id} onClick={() => handleOpenChat(chat)} className="flex items-center gap-4 active:bg-white/5 p-2 rounded-xl -mx-2 transition-colors cursor-pointer">
                             <div className="w-14 h-14 rounded-full relative">
-                                <img src={chat.image} alt={chat.name} className="w-full h-full rounded-full object-cover" />
+                                          <img src={chat.image || chat.images?.[0] || ''} alt={chat.name} className="w-full h-full rounded-full object-cover" />
                                 {chat.unread > 0 && (
                                     <div className="absolute top-0 right-0 bg-brand-primary text-[10px] font-bold text-white w-5 h-5 rounded-full flex items-center justify-center border border-black">
                                         {chat.unread}

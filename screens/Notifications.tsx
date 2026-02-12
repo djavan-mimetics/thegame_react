@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Bell, Heart, MessageCircle, Sparkles, Info } from 'lucide-react';
 import { AppScreen, NotificationItem } from '../types';
+import { apiFetch } from '../apiClient';
 
 interface NotificationsProps {
   onNavigate: (screen: AppScreen) => void;
-  items: NotificationItem[];
 }
 
 const typeStyles: Record<NotificationItem['type'], { icon: React.ReactNode; accent: string }> = {
@@ -14,7 +14,32 @@ const typeStyles: Record<NotificationItem['type'], { icon: React.ReactNode; acce
   system: { icon: <Info size={18} className="text-gray-300" />, accent: 'from-white/10 to-white/5' }
 };
 
-export const Notifications: React.FC<NotificationsProps> = ({ onNavigate, items }) => {
+export const Notifications: React.FC<NotificationsProps> = ({ onNavigate }) => {
+  const [items, setItems] = useState<NotificationItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadNotifications = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await apiFetch('/v1/notifications');
+      if (!res.ok) {
+        setError('Nao foi possivel carregar as notificacoes.');
+        return;
+      }
+      const data = (await res.json()) as { notifications: NotificationItem[] };
+      setItems(data.notifications || []);
+    } catch (err) {
+      setError('Nao foi possivel carregar as notificacoes.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadNotifications();
+  }, []);
   return (
     <div className="h-full flex flex-col bg-brand-dark text-white pt-12 pb-8">
       <header className="px-4 mb-8 flex items-center gap-4">
@@ -36,11 +61,31 @@ export const Notifications: React.FC<NotificationsProps> = ({ onNavigate, items 
       </header>
 
       <div className="flex-1 overflow-y-auto px-4 space-y-4 no-scrollbar">
-        {items.length === 0 && (
-          <div className="flex flex-col items-center justify-center text-center text-gray-500 py-16 border border-dashed border-white/10 rounded-3xl">
+        {isLoading && (
+          <div className="text-center text-sm text-gray-500">Carregando notificacoes...</div>
+        )}
+        {error && (
+          <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200 flex flex-col gap-3">
+            <span>{error}</span>
+            <button
+              onClick={loadNotifications}
+              className="self-start rounded-full border border-red-400/40 px-4 py-1.5 text-[10px] font-bold text-red-100 hover:bg-red-500/10"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        )}
+        {!isLoading && !error && items.length === 0 && (
+          <div className="flex flex-col items-center justify-center text-center text-gray-500 py-16 border border-dashed border-white/10 rounded-3xl gap-3">
             <Bell size={32} className="text-gray-600 mb-4" />
             <p className="font-semibold text-white">Sem novidades por aqui</p>
             <p className="text-sm text-gray-400">Quando alguém interagir com você, avisaremos nesse espaço.</p>
+            <button
+              onClick={loadNotifications}
+              className="rounded-full border border-white/20 px-4 py-1.5 text-[10px] font-bold text-white/80 hover:bg-white/10"
+            >
+              Tentar novamente
+            </button>
           </div>
         )}
 

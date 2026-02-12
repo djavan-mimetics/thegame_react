@@ -5,6 +5,9 @@ import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
 import { ArrowLeft, Mail, Facebook, ChevronRight, Camera, Check, User, Calendar, MapPin, Heart, Plus, ChevronDown, RotateCcw, X, Image as ImageIcon, Trash2, Eye, EyeOff } from 'lucide-react';
 import { TAGS_LIST, LOCATIONS, GENDER_OPTIONS, LOOKING_FOR_OPTIONS, RELATIONSHIP_OPTIONS } from '../constants';
+import { apiFetch } from '../apiClient';
+import { loadOptionsWithCache } from '../optionsCache';
+import { setSessionTokens } from '../authClient';
 import logoQD from '../src/img/logo_qd.png';
 
 interface RegisterProps {
@@ -60,7 +63,7 @@ const getBillSplitOptions = (gender: string) => {
     return [...base, 'Sou uma princesa, meu date paga a conta', 'Sou um princeso, meu date paga a conta'];
 };
 
-const getOrderedLookingForOptions = (gender: string) => {
+const getOrderedLookingForOptions = (gender: string, list: string[]) => {
     const group = getGenderGroup(gender);
     const score = (opt: string) => {
         const o = (opt || '').toLowerCase();
@@ -73,7 +76,7 @@ const getOrderedLookingForOptions = (gender: string) => {
         return 0;
     };
 
-    return [...LOOKING_FOR_OPTIONS].sort((a, b) => score(a) - score(b));
+    return [...list].sort((a, b) => score(a) - score(b));
 };
 
 export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
@@ -97,6 +100,14 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState('');
+    const [options, setOptions] = useState({
+        genders: GENDER_OPTIONS,
+        lookingFor: LOOKING_FOR_OPTIONS,
+        relationships: RELATIONSHIP_OPTIONS,
+        locations: LOCATIONS
+    });
 
   // Photo Editing State
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
@@ -109,6 +120,21 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
         window.scrollTo(0, 0);
     }, [step]);
 
+    useEffect(() => {
+        const loadOptions = async () => {
+            const data = await loadOptionsWithCache();
+            if (!data) return;
+            setOptions({
+                genders: data.genders?.map((g) => g.label) ?? GENDER_OPTIONS,
+                lookingFor: data.lookingFor?.map((g) => g.label) ?? LOOKING_FOR_OPTIONS,
+                relationships: data.relationships ?? RELATIONSHIP_OPTIONS,
+                locations: data.locations ?? LOCATIONS
+            });
+        };
+
+        loadOptions();
+    }, []);
+
     const handleNext = () => setStep(prev => prev + 1);
   const handleBack = () => {
     if (step === 0) onNavigate(AppScreen.WELCOME);
@@ -117,6 +143,50 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
 
   const updateData = (key: string, value: any) => {
     setFormData(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleRegisterComplete = async () => {
+    if (isSubmitting) return;
+    setSubmitError('');
+    setIsSubmitting(true);
+
+    try {
+        const res = await apiFetch('/v1/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: formData.email, password: formData.password })
+        });
+
+        if (!res.ok) {
+            setSubmitError('Nao foi possivel criar a conta.');
+            return;
+        }
+
+        const data = (await res.json()) as { accessToken: string; refreshToken: string };
+        await setSessionTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken });
+
+        await apiFetch('/v1/profile', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: formData.name,
+                birthDate: formData.birthDate,
+                city: formData.city,
+                state: formData.state,
+                gender: formData.gender,
+                lookingFor: formData.lookingFor,
+                relationship: formData.relationship,
+                classification: formData.classification,
+                billSplit: formData.billSplit,
+                height: formData.height,
+                images: formData.images
+            })
+        });
+
+        onNavigate(AppScreen.HOME);
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
     const isStrongPassword = (value: string) => {
@@ -319,7 +389,7 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
   // STEP 3: DETAILS (DOB, CITY, STATE)
   if (step === 3) {
     const isValidAge = validateAge(formData.birthDate);
-    const availableCities = formData.state ? LOCATIONS[formData.state as keyof typeof LOCATIONS] || [] : [];
+    const availableCities = formData.state ? options.locations[formData.state as keyof typeof options.locations] || [] : [];
 
     return (
       <WizardLayout title="Mais detalhes" subtitle="Conte um pouco mais sobre você" onBack={handleBack}>
@@ -424,7 +494,7 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
         <WizardLayout title="Você é" subtitle="Como você se identifica?" onBack={handleBack}>
            <div className="flex flex-col min-h-0">
                <div className="space-y-3 overflow-y-auto pr-1 pb-4 no-scrollbar flex-1 min-h-0">
-                   {GENDER_OPTIONS.map(g => (
+                   {options.genders.map(g => (
                        <button key={g} onClick={() => { updateData('gender', g); }} className={`w-full p-4 rounded-xl border flex justify-between items-center transition-all ${formData.gender === g ? 'bg-brand-primary/20 border-brand-primary text-white font-bold' : 'bg-brand-card border-gray-800 text-gray-300 hover:bg-gray-800'}`}>
                            {g} {formData.gender === g && <Check size={20} className="text-brand-primary" />}
                        </button>
@@ -449,13 +519,13 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
           updateData('lookingFor', current);
       };
 
-      const options = getOrderedLookingForOptions(formData.gender);
+    const lookingForOptions = getOrderedLookingForOptions(formData.gender, options.lookingFor);
       
       return (
         <WizardLayout title="Você procura por" subtitle="Quem você quer conhecer?" onBack={handleBack}>
            <div className="flex flex-col min-h-0">
                <div className="space-y-3 overflow-y-auto pr-1 pb-4 no-scrollbar flex-1 min-h-0">
-                   {options.map(opt => (
+                   {lookingForOptions.map(opt => (
                        <button key={opt} onClick={() => toggle(opt)} className={`w-full p-4 rounded-xl border flex justify-between items-center transition-all ${formData.lookingFor.includes(opt) ? 'bg-brand-primary/20 border-brand-primary text-white font-bold' : 'bg-brand-card border-gray-800 text-gray-300 hover:bg-gray-800'}`}>
                            {opt} {formData.lookingFor.includes(opt) && <Check size={20} className="text-brand-primary" />}
                        </button>
@@ -473,7 +543,7 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
         <WizardLayout title="Relacionamento" subtitle="O que você busca?" onBack={handleBack}>
            <div className="flex flex-col min-h-0">
                <div className="space-y-3 overflow-y-auto pr-1 pb-4 no-scrollbar flex-1 min-h-0">
-                   {RELATIONSHIP_OPTIONS.map(r => (
+                   {options.relationships.map(r => (
                        <button key={r} onClick={() => { updateData('relationship', r); }} className={`w-full p-4 rounded-xl border flex justify-between items-center transition-all ${formData.relationship === r ? 'bg-brand-primary/20 border-brand-primary text-white font-bold' : 'bg-brand-card border-gray-800 text-gray-300 hover:bg-gray-800'}`}>
                            {r} {formData.relationship === r && <Check size={20} className="text-brand-primary" />}
                        </button>
@@ -551,7 +621,10 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
                         })}
                 </div>
                 <p className="text-xs text-gray-500 text-center mb-6">Toque para adicionar/remover. A primeira foto será a principal.</p>
-                <Button fullWidth onClick={handleNext} disabled={formData.images.length < 1} className="mt-auto">Concluir Cadastro</Button>
+                <Button fullWidth onClick={handleRegisterComplete} disabled={formData.images.length < 1 || isSubmitting} className="mt-auto">
+                    {isSubmitting ? 'Enviando...' : 'Concluir Cadastro'}
+                </Button>
+                {submitError && <p className="text-xs text-red-400 text-center mt-2">{submitError}</p>}
             </WizardLayout>
 
             {/* Photo Source Modal */}

@@ -208,9 +208,9 @@ Smoketests (M2)
 - [ ] Atualizar localização e validar que `location_updated_at` muda
 
 ### M3 — Descoberta & Swipes (1–2 semanas)
-- [ ] Feed paginado + regras de elegibilidade
+- [x] Feed paginado + regras de elegibilidade
 - [ ] Filtro por distância com PostGIS (raio/`max_distance_km`)
-- [ ] Swipe API + criação de match
+- [x] Swipe API + criação de match
 - [ ] Limites free vs premium (swipes/superlikes)
 
 Smoketests (M3)
@@ -218,9 +218,9 @@ Smoketests (M3)
 - [ ] `POST /v1/swipes` cria match quando há like recíproco
 
 ### M4 — Matches & Chat (1–2 semanas)
-- [ ] Lista de matches/chats (previews)
+- [x] Lista de matches/chats (previews)
 - [ ] Mensagens paginadas
-- [ ] Envio de mensagens (HTTP) + WebSocket (tempo real)
+- [x] Envio de mensagens (HTTP) + WebSocket (tempo real)
 
 Smoketests (M4)
 - [ ] Criar conversa a partir de match e enviar mensagem

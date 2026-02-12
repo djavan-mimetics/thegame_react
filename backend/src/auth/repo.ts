@@ -40,12 +40,17 @@ export async function upsertEmailIdentity(db: Db, input: { userId: string; provi
   );
 }
 
-export async function createSession(db: Db, input: { userId: string; refreshTokenHash: string; expiresAt: Date }) {
+export async function createSession(db: Db, input: {
+  userId: string;
+  refreshTokenHash: string;
+  expiresAt: Date;
+  absoluteExpiresAt: Date;
+}) {
   const res = await db.pool.query(
-    `INSERT INTO sessions (user_id, refresh_token_hash, expires_at)
-     VALUES ($1, $2, $3)
+    `INSERT INTO sessions (user_id, refresh_token_hash, expires_at, last_used_at, absolute_expires_at)
+     VALUES ($1, $2, $3, now(), $4)
      RETURNING id`,
-    [input.userId, input.refreshTokenHash, input.expiresAt]
+    [input.userId, input.refreshTokenHash, input.expiresAt, input.absoluteExpiresAt]
   );
   return res.rows[0] as { id: string };
 }
@@ -60,13 +65,24 @@ export async function revokeSessionByRefreshHash(db: Db, refreshHash: string) {
 
 export async function findSessionByRefreshHash(db: Db, refreshHash: string) {
   const res = await db.pool.query(
-    `SELECT id, user_id, expires_at, revoked_at
+    `SELECT id, user_id, expires_at, revoked_at, last_used_at, absolute_expires_at
      FROM sessions
      WHERE refresh_token_hash = $1
      LIMIT 1`,
     [refreshHash]
   );
-  return (res.rows[0] as { id: string; user_id: string; expires_at: Date; revoked_at: Date | null } | undefined) ?? null;
+  return (
+    res.rows[0] as
+      | {
+          id: string;
+          user_id: string;
+          expires_at: Date;
+          revoked_at: Date | null;
+          last_used_at: Date;
+          absolute_expires_at: Date;
+        }
+      | undefined
+  ) ?? null;
 }
 
 export async function rotateSessionRefreshToken(db: Db, input: {
@@ -77,13 +93,34 @@ export async function rotateSessionRefreshToken(db: Db, input: {
   const res = await db.pool.query(
     `UPDATE sessions
      SET refresh_token_hash = $2,
-         expires_at = $3
+         expires_at = $3,
+         last_used_at = now()
      WHERE id = $1
        AND revoked_at IS NULL
      RETURNING id`,
     [input.sessionId, input.newRefreshTokenHash, input.newExpiresAt]
   );
   return (res.rows[0] as { id: string } | undefined) ?? null;
+}
+
+export async function recordRefreshToken(db: Db, input: { sessionId: string; refreshTokenHash: string }) {
+  await db.pool.query(
+    `INSERT INTO session_refresh_tokens (session_id, refresh_token_hash, revoked_at)
+     VALUES ($1, $2, now())
+     ON CONFLICT (refresh_token_hash) DO NOTHING`,
+    [input.sessionId, input.refreshTokenHash]
+  );
+}
+
+export async function findSessionByUsedRefreshHash(db: Db, refreshHash: string) {
+  const res = await db.pool.query(
+    `SELECT session_id
+     FROM session_refresh_tokens
+     WHERE refresh_token_hash = $1
+     LIMIT 1`,
+    [refreshHash]
+  );
+  return (res.rows[0] as { session_id: string } | undefined) ?? null;
 }
 
 export async function createPasswordResetToken(db: Db, input: { userId: string; tokenHash: string; expiresAt: Date }) {

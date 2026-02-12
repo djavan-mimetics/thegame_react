@@ -1,4 +1,4 @@
-export async function up(pgm) {
+exports.up = async (pgm) => {
   pgm.createExtension('postgis', { ifNotExists: true });
 
   // For gen_random_uuid()
@@ -44,8 +44,8 @@ export async function up(pgm) {
     created_at: { type: 'timestamptz', notNull: true, default: pgm.func('now()') }
   });
   pgm.createIndex('password_reset_tokens', ['user_id', 'created_at']);
-}
+};
 
-export async function down(_pgm) {
+exports.down = async (_pgm) => {
   // Keep extension on down by default; no-op.
-}
+};

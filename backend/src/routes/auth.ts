@@ -6,8 +6,11 @@ import {
   createPasswordResetToken,
   createSession,
   findSessionByRefreshHash,
+  findSessionByUsedRefreshHash,
   findUserByEmail,
   findUserById,
+  recordRefreshToken,
+  revokeSession,
   revokeSessionByRefreshHash,
   rotateSessionRefreshToken,
   updateUserPasswordHash,
@@ -71,8 +74,15 @@ export async function registerAuthRoutes(app: FastifyInstance, config: AppConfig
     const refreshToken = generateOpaqueToken();
     const refreshTokenHash = sha256Base64Url(refreshToken);
     const refreshTtlDays = config.REFRESH_TTL_DAYS ?? 30;
+    const absoluteTtlDays = config.SESSION_ABSOLUTE_TTL_DAYS ?? 365;
     const expiresAt = new Date(Date.now() + refreshTtlDays * 24 * 60 * 60 * 1000);
-    const session = await createSession(app.db, { userId: user.id, refreshTokenHash, expiresAt });
+    const absoluteExpiresAt = new Date(Date.now() + absoluteTtlDays * 24 * 60 * 60 * 1000);
+    const session = await createSession(app.db, {
+      userId: user.id,
+      refreshTokenHash,
+      expiresAt: absoluteExpiresAt < expiresAt ? absoluteExpiresAt : expiresAt,
+      absoluteExpiresAt
+    });
 
     const accessToken = await signAccessToken({
       secret: accessSecret,
@@ -104,8 +114,15 @@ export async function registerAuthRoutes(app: FastifyInstance, config: AppConfig
     const refreshToken = generateOpaqueToken();
     const refreshTokenHash = sha256Base64Url(refreshToken);
     const refreshTtlDays = config.REFRESH_TTL_DAYS ?? 30;
+    const absoluteTtlDays = config.SESSION_ABSOLUTE_TTL_DAYS ?? 365;
     const expiresAt = new Date(Date.now() + refreshTtlDays * 24 * 60 * 60 * 1000);
-    const session = await createSession(app.db, { userId: user.id, refreshTokenHash, expiresAt });
+    const absoluteExpiresAt = new Date(Date.now() + absoluteTtlDays * 24 * 60 * 60 * 1000);
+    const session = await createSession(app.db, {
+      userId: user.id,
+      refreshTokenHash,
+      expiresAt: absoluteExpiresAt < expiresAt ? absoluteExpiresAt : expiresAt,
+      absoluteExpiresAt
+    });
 
     const accessToken = await signAccessToken({
       secret: accessSecret,
@@ -126,9 +143,17 @@ export async function registerAuthRoutes(app: FastifyInstance, config: AppConfig
     const body = refreshSchema.parse(req.body);
     const refreshHash = sha256Base64Url(body.refreshToken);
     const session = await findSessionByRefreshHash(app.db, refreshHash);
-    if (!session) return reply.code(401).send({ error: 'unauthorized' });
+    if (!session) {
+      const reused = await findSessionByUsedRefreshHash(app.db, refreshHash);
+      if (reused) {
+        await revokeSession(app.db, { sessionId: reused.session_id });
+        return reply.code(401).send({ error: 'refresh_reuse' });
+      }
+      return reply.code(401).send({ error: 'unauthorized' });
+    }
     if (session.revoked_at) return reply.code(401).send({ error: 'unauthorized' });
     if (new Date(session.expires_at).getTime() <= Date.now()) return reply.code(401).send({ error: 'unauthorized' });
+    if (new Date(session.absolute_expires_at).getTime() <= Date.now()) return reply.code(401).send({ error: 'session_expired' });
 
     const user = await findUserById(app.db, session.user_id);
     if (!user || user.status !== 'active') return reply.code(401).send({ error: 'unauthorized' });
@@ -140,10 +165,12 @@ export async function registerAuthRoutes(app: FastifyInstance, config: AppConfig
     const newRefreshHash = sha256Base64Url(newRefreshToken);
     const refreshTtlDays = config.REFRESH_TTL_DAYS ?? 30;
     const newExpiresAt = new Date(Date.now() + refreshTtlDays * 24 * 60 * 60 * 1000);
+    const cappedExpiresAt = newExpiresAt > session.absolute_expires_at ? session.absolute_expires_at : newExpiresAt;
+    await recordRefreshToken(app.db, { sessionId: session.id, refreshTokenHash: refreshHash });
     const rotated = await rotateSessionRefreshToken(app.db, {
       sessionId: session.id,
       newRefreshTokenHash: newRefreshHash,
-      newExpiresAt
+      newExpiresAt: cappedExpiresAt
     });
     if (!rotated) return reply.code(401).send({ error: 'unauthorized' });
 

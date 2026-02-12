@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AppScreen, MyProfile, ReportTicket } from './types';
 import { Welcome } from './screens/Welcome';
 import { Login } from './screens/Login';
@@ -24,7 +24,9 @@ import { ReportDetail } from './screens/ReportDetail';
 import { About } from './screens/About';
 import { Rules } from './screens/Rules';
 import { Notifications } from './screens/Notifications';
-import { MOCK_REPORTS, MOCK_NOTIFICATIONS } from './constants';
+import { MOCK_REPORTS } from './constants';
+import { refreshSession } from './authClient';
+import { apiFetch } from './apiClient';
 
 const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>(AppScreen.WELCOME);
@@ -53,7 +55,6 @@ const App: React.FC = () => {
   const [reports, setReports] = useState<ReportTicket[]>(MOCK_REPORTS);
   const [reportContext, setReportContext] = useState<{name: string, date: string} | null>(null);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
-  const [notifications] = useState(MOCK_NOTIFICATIONS);
 
   const updateProfile = (key: keyof MyProfile, value: any) => {
     setMyProfile(prev => ({ ...prev, [key]: value }));
@@ -89,6 +90,38 @@ const App: React.FC = () => {
     // Scroll to top when changing screens
     window.scrollTo(0, 0);
   };
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      const ok = await refreshSession();
+      if (!ok) return;
+
+      const res = await apiFetch('/v1/profile');
+      if (!res.ok) return;
+      const data = (await res.json()) as { profile: any };
+      if (!data.profile) return;
+
+      setMyProfile((prev) => ({
+        ...prev,
+        name: data.profile.name ?? prev.name,
+        birthDate: data.profile.birth_date ?? prev.birthDate,
+        city: data.profile.city_name ?? prev.city,
+        state: data.profile.state_code ?? prev.state,
+        gender: data.profile.gender_label ?? prev.gender,
+        lookingFor: data.profile.lookingFor ?? prev.lookingFor,
+        images: data.profile.photos ?? prev.images,
+        bio: data.profile.bio ?? prev.bio,
+        rankingEnabled: data.profile.ranking_enabled ?? prev.rankingEnabled,
+        height: data.profile.height_cm ? `${data.profile.height_cm} cm` : prev.height,
+        currentTag: data.profile.current_tag ?? prev.currentTag,
+        classification: data.profile.classification ?? prev.classification,
+        billSplit: data.profile.bill_split ?? prev.billSplit,
+        availableToday: data.profile.available_today ?? prev.availableToday
+      }));
+    };
+
+    loadProfile();
+  }, []);
 
   const handleSelectReport = (id: string) => {
       setSelectedReportId(id);
@@ -133,7 +166,7 @@ const App: React.FC = () => {
       {currentScreen === AppScreen.HELP && <Help onNavigate={navigate} />}
       {currentScreen === AppScreen.CHANGE_PASSWORD && <ChangePassword onNavigate={navigate} />}
       {currentScreen === AppScreen.ABOUT && <About onNavigate={navigate} />}
-      {currentScreen === AppScreen.NOTIFICATIONS && <Notifications onNavigate={navigate} items={notifications} />}
+      {currentScreen === AppScreen.NOTIFICATIONS && <Notifications onNavigate={navigate} />}
 
       {/* Reporting System */}
       {currentScreen === AppScreen.REPORT && <Report onNavigate={navigate} initialContext={reportContext} addReport={addReport} />}

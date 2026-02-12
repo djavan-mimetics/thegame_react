@@ -1,0 +1,87 @@
+# thegame.todo
+# Formato: Milestone -> tarefas pendentes para producao Android/iOS
+# Status: [ ] pendente  [x] concluido
+
+Milestone: M0 - Planejamento e escopo
+- [ ] Definir stack mobile (Capacitor vs React Native) e estrategia de release
+- [ ] Definir ambientes (dev/stage/prod) e dominios
+- [ ] Definir requisitos legais (LGPD, termos, privacidade, consentimento)
+- [x] Verificar instalacao do PostgreSQL no servidor
+- [x] Configurar usuario postgres com senha forte
+- [x] Criar usuario thegameuserdb e banco thegame (owner)
+- [x] Atualizar .env do backend com DATABASE_URL seguro
+- [x] Configurar .env do frontend (VITE_API_BASE_URL)
+- [x] Definir VITE_API_BASE_URL em .env.development/.env.staging/.env.production
+
+Milestone: M1 - Base de dados e migracoes
+- [ ] Criar tabelas de opcoes (genders, looking_for_options, relationships, classifications, bill_split_options, tags, education, etc.)
+- [ ] Criar tabelas principais (users, profiles, photos, sessions, user_identities)
+- [ ] Criar tabelas de relacionamento (profile_tags, profile_looking_for, profile_personality)
+- [ ] Criar indices (perfil por user_id, lookup por email, status, created_at)
+- [ ] Adicionar auditoria basica (created_at/updated_at) e soft delete
+- [x] Gerar migracoes com node-pg-migrate conforme o schema: lookups (opcoes do perfil), profiles, photos, tabelas de relacao, indices e auditoria.
+- [x] Aplicar migrations no banco (npm run db:migrate)
+- [x] Seed de opcoes e localidades (genders, tags, cidades, etc.)
+
+Milestone: M2 - API de perfil e opcoes
+- [x] Endpoints de CRUD do perfil (GET/PUT)
+- [x] Endpoints de opcoes (GET /v1/options/*)
+- [x] Validacoes e enums no backend (zod)
+- [x] Cache de opcoes no app (ETag/If-None-Match)
+- [ ] Especificar endpoints REST completos para perfil/opcoes/fotos (rotas, payloads, status codes, erros, auth).
+- [x] Implementar controle de sessao persistente (refresh token, renovacao automatica, reautenticacao silenciosa).
+- [x] Implementar endpoints de perfil e opcoes (GET/PUT /v1/profile, GET /v1/options/all)
+
+Milestone: M3 - Midia (Google Cloud Storage)
+- [ ] Criar bucket GCS com CORS e politica de acesso
+- [ ] Implementar upload direto com URL assinada (backend gera signed URL)
+- [ ] Salvar metadados de fotos (gcs_path, url, ordem, is_primary)
+- [ ] Transformacao/otimizacao de imagem (resize, format webp/jpg)
+- [ ] Rotina de limpeza de arquivos orfaos
+- [ ] Montar fluxo completo no backend para upload GCS (signed URL, validacao, persistencia e cleanup).
+
+Milestone: M4 - Login social (Google/Facebook)
+- [ ] Criar apps OAuth (Google/Facebook) com redirect URIs
+- [ ] Implementar fluxo OAuth no app (PKCE)
+- [ ] Implementar endpoints backend para trocar token e criar identidade
+- [ ] Persistir provider_subject em user_identities
+- [ ] Vincular contas por email quando apropriado
+- [ ] Montar fluxo completo de login social no backend (troca de token, validacao, cria/vincula usuario, sessao e refresh).
+
+Milestone: M5 - Frontend (integracao API)
+- [x] Substituir mocks por chamadas API (home/likes/chat/notifications)
+- [ ] Estado global e cache (auth, perfil, opcoes)
+- [x] Tratamento de erros, loading e offline
+- [ ] Upload de fotos usando signed URL
+- [ ] Protecao de rotas (auth guard)
+- [x] Persistir sessao localmente e revalidar tokens ao abrir o app (login automatico).
+- [x] Substituir chamadas API por fetchWithAuth quando houver endpoints reais.
+- [ ] Trocar armazenamento de token para Secure Storage no mobile.
+- [x] Integrar login/registro e editar perfil com apiFetch
+- [x] Carregar opcoes de perfil a partir do backend (fallback para mocks)
+- [ ] Padronizar API_BASE_URL por ambiente (dev/stage/prod) e documentar.
+
+Milestone: M6 - Build mobile (Android/iOS)
+- [ ] Integrar Capacitor (ou RN) e configurar builds
+- [ ] Configurar icones, splash, deep links
+- [ ] Configurar assinatura Android (keystore) e iOS (profiles)
+- [ ] Pipeline CI para builds e distribuicao
+
+Milestone: M7 - Seguranca e compliance
+- [ ] Configurar JWT secrets, rotacao e TTLs seguros
+- [ ] Ativar rate limiting e logs de auditoria
+- [ ] Validar CORS, headers e TLS
+- [ ] Harden de banco (roles, minimo privilegio)
+- [ ] LGPD: consentimento, exportar e excluir conta
+
+Milestone: M8 - Observabilidade e operacoes
+- [ ] Monitoramento (logs, metrics, tracing)
+- [ ] Alertas (uptime, erros, latencia)
+- [ ] Backups automatizados do banco
+- [ ] Plano de rollback
+
+Milestone: M9 - QA e publicacao
+- [ ] Testes E2E e smoke tests
+- [ ] Testes de upload e login social
+- [ ] Revisao de UX/performance
+- [ ] Submissao Play Store / App Store

@@ -2,6 +2,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AppScreen, MyProfile } from '../types';
 import { TAGS_LIST, LOCATIONS } from '../constants';
+import { apiFetch } from '../apiClient';
+import { loadOptionsWithCache } from '../optionsCache';
 import { ChevronLeft, Plus, ChevronRight, Moon, GraduationCap, Users, User, Ruler, HeartHandshake, Smile, Heart, Dog, Wine, Cigarette, Dumbbell, Pizza, X, Check, Sun, Trash2, Camera, Image as ImageIcon, RotateCcw, Facebook, Mail, Trophy, Calendar, MapPin, ChevronDown, Bell, Settings as SettingsIcon, Zap } from 'lucide-react';
 import { Modal } from '../components/Modal';
 
@@ -95,6 +97,26 @@ const MODAL_CONTAINER = 'bg-[#1e1e1e] w-full max-w-md rounded-3xl border border-
 export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile, updateProfile, completion }) => {
   // --- State ---
   const [smartPhotos, setSmartPhotos] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [optionsData, setOptionsData] = useState({
+        genders: OPTIONS.gender,
+        lookingFor: OPTIONS.lookingFor,
+        relationships: OPTIONS.relationship,
+        signs: OPTIONS.sign,
+        educations: OPTIONS.education,
+        families: OPTIONS.family,
+        pets: OPTIONS.pets,
+        drinks: OPTIONS.drink,
+        smokes: OPTIONS.smoke,
+        exercises: OPTIONS.exercise,
+        foods: OPTIONS.food,
+        sleeps: OPTIONS.sleep,
+        personality: OPTIONS.personality,
+        tags: TAGS_LIST,
+        classifications: [] as string[],
+        billSplitOptions: [] as string[],
+        locations: LOCATIONS
+    });
   
   // Local state for UI toggles
   const [ageRange, setAgeRange] = useState<[number, number]>([18, 25]);
@@ -135,7 +157,37 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
     const [isCityModalOpen, setIsCityModalOpen] = useState(false);
 
   // Derived state for cities based on selected state
-  const availableCities = myProfile.state ? LOCATIONS[myProfile.state as keyof typeof LOCATIONS] || [] : [];
+    const availableCities = myProfile.state ? optionsData.locations[myProfile.state as keyof typeof optionsData.locations] || [] : [];
+
+    useEffect(() => {
+        const loadOptions = async () => {
+            const data = await loadOptionsWithCache();
+            if (!data) return;
+
+            setOptionsData((prev) => ({
+                ...prev,
+                genders: data.genders?.map((g) => g.label) ?? prev.genders,
+                lookingFor: data.lookingFor?.map((g) => g.label) ?? prev.lookingFor,
+                relationships: data.relationships ?? prev.relationships,
+                signs: data.signs ?? prev.signs,
+                educations: data.educations ?? prev.educations,
+                families: data.families ?? prev.families,
+                pets: data.pets ?? prev.pets,
+                drinks: data.drinks ?? prev.drinks,
+                smokes: data.smokes ?? prev.smokes,
+                exercises: data.exercises ?? prev.exercises,
+                foods: data.foods ?? prev.foods,
+                sleeps: data.sleeps ?? prev.sleeps,
+                personality: data.personalityTraits ?? prev.personality,
+                tags: data.tags ?? prev.tags,
+                classifications: data.classifications ?? prev.classifications,
+                billSplitOptions: data.billSplitOptions ?? prev.billSplitOptions,
+                locations: data.locations ?? prev.locations
+            }));
+        };
+
+        loadOptions();
+    }, []);
 
   // --- Handlers ---
   const handleUpdate = (key: string, value: string) => {
@@ -233,7 +285,7 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
         return (
             <div className="space-y-4">
                 <div className="flex flex-wrap gap-2">
-                    {TAGS_LIST.map(tag => {
+                    {optionsData.tags.map(tag => {
                         const isSelected = currentTag === tag;
                         return (
                             <button key={tag} onClick={() => { updateProfile('currentTag', tag); setActiveModal(null); }} className={`px-4 py-2 rounded-full text-sm font-bold border transition-all ${isSelected ? 'bg-brand-primary border-brand-primary text-white' : 'bg-transparent border-gray-600 text-gray-300'}`}>{tag}</button>
@@ -253,7 +305,7 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
         );
     }
     if (activeModal === 'classification') {
-        const options = getClassificationOptions(myProfile.gender);
+        const options = optionsData.classifications.length > 0 ? optionsData.classifications : getClassificationOptions(myProfile.gender);
         return (
             <div className="space-y-1">
                 {options.map(option => (
@@ -263,7 +315,7 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
         );
     }
     if (activeModal === 'billSplit') {
-        const options = getBillSplitOptions(myProfile.gender);
+        const options = optionsData.billSplitOptions.length > 0 ? optionsData.billSplitOptions : getBillSplitOptions(myProfile.gender);
         return (
             <div className="space-y-1">
                 {options.map(option => (
@@ -286,7 +338,7 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
     if (activeModal === 'gender') {
         return (
              <div className="space-y-1">
-                {OPTIONS.gender.map(option => (
+                {optionsData.genders.map(option => (
                     <button key={option} onClick={() => { updateProfile('gender', option); setActiveModal(null); }} className={`w-full text-left p-4 rounded-xl flex justify-between items-center ${myProfile.gender === option ? 'bg-brand-primary/20 text-brand-primary font-bold border border-brand-primary/50' : 'text-gray-300 hover:bg-white/5'}`}>{option}{myProfile.gender === option && <Check size={18} />}</button>
                 ))}
             </div>
@@ -295,7 +347,7 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
     if (activeModal === 'lookingFor') {
          return (
              <div className="space-y-1">
-                {OPTIONS.lookingFor.map(option => {
+                {optionsData.lookingFor.map(option => {
                     const isSelected = myProfile.lookingFor.includes(option);
                     return (
                         <button key={option} onClick={() => toggleLookingFor(option)} className={`w-full text-left p-4 rounded-xl flex justify-between items-center ${isSelected ? 'bg-brand-primary/20 text-brand-primary font-bold border border-brand-primary/50' : 'text-gray-300 hover:bg-white/5'}`}>{option}{isSelected && <Check size={18} />}</button>
@@ -304,7 +356,22 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
             </div>
         );
     }
-    const options = OPTIONS[activeModal as string] || [];
+    const optionsByModal: Record<string, string[]> = {
+        relationship: optionsData.relationships,
+        sign: optionsData.signs,
+        education: optionsData.educations,
+        family: optionsData.families,
+        pets: optionsData.pets,
+        drink: optionsData.drinks,
+        smoke: optionsData.smokes,
+        exercise: optionsData.exercises,
+        food: optionsData.foods,
+        sleep: optionsData.sleeps,
+        personality: optionsData.personality,
+        gender: optionsData.genders,
+        lookingFor: optionsData.lookingFor
+    };
+    const options = optionsByModal[activeModal as string] || [];
     return (
         <div className="space-y-1">
             {options.map(option => (
@@ -611,10 +678,46 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
 
             <div className="pt-6">
                 <button
-                    onClick={() => onNavigate(AppScreen.HOME)}
+                    onClick={async () => {
+                        if (isSaving) return;
+                        setIsSaving(true);
+                        await apiFetch('/v1/profile', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                name: myProfile.name,
+                                birthDate: myProfile.birthDate,
+                                city: myProfile.city,
+                                state: myProfile.state,
+                                gender: myProfile.gender,
+                                lookingFor: myProfile.lookingFor,
+                                relationship: profileData.relationship,
+                                classification: myProfile.classification,
+                                billSplit: myProfile.billSplit,
+                                height: myProfile.height,
+                                bio: myProfile.bio,
+                                rankingEnabled: myProfile.rankingEnabled,
+                                availableToday: myProfile.availableToday,
+                                currentTag: myProfile.currentTag,
+                                education: profileData.education,
+                                family: profileData.family,
+                                sign: profileData.sign,
+                                pets: profileData.pets,
+                                drink: profileData.drink,
+                                smoke: profileData.smoke,
+                                exercise: profileData.exercise,
+                                food: profileData.food,
+                                sleep: profileData.sleep,
+                                personality: profileData.personality ? [profileData.personality] : [],
+                                images: myProfile.images
+                            })
+                        });
+                        setIsSaving(false);
+                        onNavigate(AppScreen.HOME);
+                    }}
                     className="w-full py-4 bg-brand-primary rounded-full text-white font-bold hover:opacity-90 transition-opacity"
                 >
-                    Concluir
+                    {isSaving ? 'Salvando...' : 'Concluir'}
                 </button>
             </div>
 
@@ -658,7 +761,7 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
 
                     <div className="overflow-y-auto no-scrollbar flex-1">
                         <div className="space-y-1">
-                            {Object.keys(LOCATIONS).map((st) => (
+                            {Object.keys(optionsData.locations).map((st) => (
                                 <button
                                     key={st}
                                     onClick={() => {

@@ -5,6 +5,11 @@ import { createDb } from './db.js';
 import { registerAuth } from './auth.js';
 import { getConfig, registerConfig } from './config.js';
 import { registerAuthRoutes } from './routes/auth.js';
+import { registerOptionsRoutes } from './routes/options.js';
+import { registerProfileRoutes } from './routes/profile.js';
+import { registerFeedRoutes } from './routes/feed.js';
+import { registerChatRoutes } from './routes/chats.js';
+import { registerNotificationsRoutes } from './routes/notifications.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -32,6 +37,11 @@ export async function buildApp() {
   registerAuth(app, config);
 
   await registerAuthRoutes(app, config);
+  await registerOptionsRoutes(app, config);
+  await registerProfileRoutes(app, config);
+  await registerFeedRoutes(app, config);
+  await registerChatRoutes(app, config);
+  await registerNotificationsRoutes(app, config);
 
   const db = createDb(config.DATABASE_URL);
 

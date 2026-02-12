@@ -10,6 +10,7 @@ export type AppConfig = {
   JWT_ACCESS_SECRET?: string;
   JWT_ACCESS_TTL_SECONDS?: number;
   REFRESH_TTL_DAYS?: number;
+  SESSION_ABSOLUTE_TTL_DAYS?: number;
   PASSWORD_RESET_TTL_MINUTES?: number;
 };
 
@@ -25,6 +26,7 @@ const schema = {
     JWT_ACCESS_SECRET: { type: 'string', default: '' },
     JWT_ACCESS_TTL_SECONDS: { type: 'number', default: 900 },
     REFRESH_TTL_DAYS: { type: 'number', default: 30 },
+    SESSION_ABSOLUTE_TTL_DAYS: { type: 'number', default: 365 },
     PASSWORD_RESET_TTL_MINUTES: { type: 'number', default: 30 }
   }
 } as const;

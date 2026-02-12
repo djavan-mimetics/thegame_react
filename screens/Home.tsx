@@ -1,20 +1,25 @@
 
 import React, { useState, useEffect } from 'react';
-import { MOCK_PROFILES, TAGS_LIST } from '../constants';
+import { TAGS_LIST } from '../constants';
 import { UserProfile, AppScreen } from '../types';
 import { Heart, HeartCrack, MapPin, Info, X, ChevronDown, Ruler, Moon, GraduationCap, Wine, Cigarette, Dog, Dumbbell, Search, Globe, Lightbulb, Users, Baby, HeartHandshake, Utensils, Bed, Trophy, Sun, ChevronLeft, ChevronRight } from 'lucide-react';
 import logoMark from '../src/img/logo.png';
 import { Modal } from '../components/Modal';
+import { apiFetch } from '../apiClient';
 
 interface HomeProps {
     onNavigate?: (screen: AppScreen) => void;
 }
 
 export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
-    const [profiles, setProfiles] = useState<UserProfile[]>(() => [...MOCK_PROFILES]);
+    const [profiles, setProfiles] = useState<UserProfile[]>([]);
     const [lastDirection, setLastDirection] = useState<string | null>(null);
     const [isExpanded, setIsExpanded] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [nextCursor, setNextCursor] = useState<string | null>(null);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
 
     const formatTagLabel = (tag: unknown) => {
         const raw = String(tag ?? '').trim();
@@ -61,9 +66,48 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
     const lookingForChips = currentProfile?.lookingFor || [];
     const personalityTraits = currentProfile?.personality || [];
 
-    const handleSwipe = (direction: 'left' | 'right' | 'up' | 'down') => {
+    const fetchFeed = async (cursor?: string | null, append = false) => {
+        if (append) {
+            setIsLoadingMore(true);
+        } else {
+            setIsLoading(true);
+        }
+        setError(null);
+        try {
+            const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+            const res = await apiFetch(`/v1/feed${query}`);
+            if (!res.ok) {
+                setError('Nao foi possivel carregar os perfis agora.');
+                if (!append) setProfiles([]);
+                return;
+            }
+            const data = (await res.json()) as { profiles: UserProfile[]; nextCursor?: string | null };
+            setNextCursor(data.nextCursor ?? null);
+            setProfiles((prev) => (append ? [...prev, ...(data.profiles || [])] : data.profiles || []));
+        } catch (err) {
+            setError('Nao foi possivel carregar os perfis agora.');
+            if (!append) setProfiles([]);
+        } finally {
+            setIsLoading(false);
+            setIsLoadingMore(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchFeed();
+    }, []);
+
+    const handleSwipe = async (direction: 'left' | 'right' | 'up' | 'down') => {
         setIsExpanded(false); // Reset expansion on swipe
         setLastDirection(direction);
+        const swipeDirection = direction === 'right' ? 'like' : direction === 'up' ? 'superlike' : direction === 'left' ? 'dislike' : 'neutral';
+        if (currentProfile?.id) {
+            apiFetch('/v1/swipes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targetUserId: currentProfile.id, direction: swipeDirection })
+            });
+        }
         // Simulate delay for animation
         setTimeout(() => {
                 setProfiles((prev) => {
@@ -76,6 +120,13 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
                 setLastDirection(null);
         }, 300);
     };
+
+    useEffect(() => {
+        if (!nextCursor || isLoadingMore) return;
+        if (profiles.length <= 2 && !isLoading && !error) {
+            fetchFeed(nextCursor, true);
+        }
+    }, [profiles.length, nextCursor, isLoadingMore, isLoading, error]);
 
     useEffect(() => {
         setCurrentImageIndex(0);
@@ -101,7 +152,13 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
     }
   };
 
-  if (!currentProfile) {
+    if (!currentProfile) {
+        const title = isLoading ? 'Carregando...' : error ? 'Falha ao carregar' : 'Explorando...';
+        const subtitle = isLoading
+                ? 'Estamos buscando novos perfis para voce.'
+                : error
+                ? error
+                : 'Voce visualizou todos os perfis disponiveis na sua regiao!';
     return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center bg-brand-dark relative overflow-hidden">
         {/* Decorative elements */}
@@ -122,39 +179,53 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
             </div>
 
             <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-brand-accent mb-4 tracking-tight">
-                Explorando...
+                {title}
             </h2>
             
             <p className="text-white font-medium text-base mb-2">
-                Você visualizou todos os perfis disponíveis na sua região!
+                {subtitle}
             </p>
             
-            <p className="text-gray-400 text-sm mb-10 leading-relaxed">
-                Que tal expandir sua busca ou aguardar novos usuários?
-            </p>
-
-            <button 
-                onClick={() => onNavigate && onNavigate(AppScreen.EDIT_PROFILE)}
-                className="w-full py-4 bg-gradient-to-r from-brand-primary to-brand-accent rounded-full text-white font-bold shadow-lg shadow-brand-primary/30 hover:scale-105 transition-transform flex items-center justify-center gap-2"
-            >
-                <Globe size={20} />
-                Buscar em área maior
-            </button>
-            
-            <div className="mt-8 flex items-start gap-2 text-left opacity-60">
-                <Lightbulb size={16} className="text-yellow-400 shrink-0 mt-0.5" />
-                <p className="text-xs text-gray-300">
-                    <span className="font-bold text-yellow-400">Dica:</span> Novos usuários aparecem a cada dia! Volte mais tarde para ver mais.
+            {!isLoading && !error && (
+                <p className="text-gray-400 text-sm mb-10 leading-relaxed">
+                    Que tal expandir sua busca ou aguardar novos usuarios?
                 </p>
-            </div>
+            )}
+
+            {!error && (
+                <button 
+                    onClick={() => onNavigate && onNavigate(AppScreen.EDIT_PROFILE)}
+                    className="w-full py-4 bg-gradient-to-r from-brand-primary to-brand-accent rounded-full text-white font-bold shadow-lg shadow-brand-primary/30 hover:scale-105 transition-transform flex items-center justify-center gap-2"
+                >
+                    <Globe size={20} />
+                    Buscar em area maior
+                </button>
+            )}
+            {error && (
+                <button 
+                    onClick={fetchFeed}
+                    className="w-full py-4 bg-gradient-to-r from-brand-primary to-brand-accent rounded-full text-white font-bold shadow-lg shadow-brand-primary/30 hover:scale-105 transition-transform"
+                >
+                    Tentar novamente
+                </button>
+            )}
+            
+            {!isLoading && !error && (
+                <div className="mt-8 flex items-start gap-2 text-left opacity-60">
+                    <Lightbulb size={16} className="text-yellow-400 shrink-0 mt-0.5" />
+                    <p className="text-xs text-gray-300">
+                        <span className="font-bold text-yellow-400">Dica:</span> Novos usuarios aparecem a cada dia! Volte mais tarde para ver mais.
+                    </p>
+                </div>
+            )}
             
             {/* Optional: Reset for Demo */}
-            <button 
-                onClick={() => setProfiles([...MOCK_PROFILES])}
-                className="mt-6 text-xs text-gray-600 hover:text-gray-400 underline"
-            >
-                (Demo: Recarregar Perfis)
-            </button>
+                <button 
+                    onClick={() => fetchFeed(null, false)}
+                    className="mt-6 text-xs text-gray-600 hover:text-gray-400 underline"
+                >
+                    {isLoading ? 'Carregando...' : '(Demo: Recarregar Perfis)'}
+                </button>
         </div>
       </div>
     );
