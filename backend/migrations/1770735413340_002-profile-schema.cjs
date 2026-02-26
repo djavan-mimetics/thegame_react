@@ -16,7 +16,7 @@ exports.up = (pgm) => {
 
 	const createLookup = (table) => {
 		pgm.createTable(table, {
-			id: 'serial',
+			id: { type: 'serial', primaryKey: true },
 			label: { type: 'text', notNull: true },
 			sort_order: { type: 'integer', notNull: true, default: 0 },
 			is_active: { type: 'boolean', notNull: true, default: true },
@@ -27,7 +27,7 @@ exports.up = (pgm) => {
 	};
 
 	pgm.createTable('states', {
-		id: 'serial',
+		id: { type: 'serial', primaryKey: true },
 		code: { type: 'varchar(2)', notNull: true },
 		name: { type: 'text', notNull: true },
 		...auditColumns
@@ -36,7 +36,7 @@ exports.up = (pgm) => {
 	pgm.addConstraint('states', 'states_name_unique', { unique: ['name'] });
 
 	pgm.createTable('cities', {
-		id: 'serial',
+		id: { type: 'serial', primaryKey: true },
 		state_id: { type: 'integer', notNull: true, references: 'states', onDelete: 'cascade' },
 		name: { type: 'text', notNull: true },
 		...auditColumns
@@ -45,7 +45,7 @@ exports.up = (pgm) => {
 	pgm.addIndex('cities', ['state_id', 'name']);
 
 	pgm.createTable('genders', {
-		id: 'serial',
+		id: { type: 'serial', primaryKey: true },
 		label: { type: 'text', notNull: true },
 		group: { type: 'text', notNull: true },
 		sort_order: { type: 'integer', notNull: true, default: 0 },
@@ -56,7 +56,7 @@ exports.up = (pgm) => {
 	pgm.addIndex('genders', ['group', 'sort_order']);
 
 	pgm.createTable('looking_for_options', {
-		id: 'serial',
+		id: { type: 'serial', primaryKey: true },
 		label: { type: 'text', notNull: true },
 		group: { type: 'text', notNull: true },
 		sort_order: { type: 'integer', notNull: true, default: 0 },

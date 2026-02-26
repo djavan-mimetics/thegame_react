@@ -28,17 +28,17 @@ Milestone: M2 - API de perfil e opcoes
 - [x] Endpoints de opcoes (GET /v1/options/*)
 - [x] Validacoes e enums no backend (zod)
 - [x] Cache de opcoes no app (ETag/If-None-Match)
-- [ ] Especificar endpoints REST completos para perfil/opcoes/fotos (rotas, payloads, status codes, erros, auth).
+- [x] Especificar endpoints REST completos para perfil/opcoes/fotos (rotas, payloads, status codes, erros, auth).
 - [x] Implementar controle de sessao persistente (refresh token, renovacao automatica, reautenticacao silenciosa).
 - [x] Implementar endpoints de perfil e opcoes (GET/PUT /v1/profile, GET /v1/options/all)
 
 Milestone: M3 - Midia (Google Cloud Storage)
 - [ ] Criar bucket GCS com CORS e politica de acesso
-- [ ] Implementar upload direto com URL assinada (backend gera signed URL)
-- [ ] Salvar metadados de fotos (gcs_path, url, ordem, is_primary)
+- [x] Implementar upload direto com URL assinada (backend gera signed URL)
+- [x] Salvar metadados de fotos (gcs_path, url, ordem, is_primary)
 - [ ] Transformacao/otimizacao de imagem (resize, format webp/jpg)
-- [ ] Rotina de limpeza de arquivos orfaos
-- [ ] Montar fluxo completo no backend para upload GCS (signed URL, validacao, persistencia e cleanup).
+- [x] Rotina de limpeza de arquivos orfaos
+- [x] Montar fluxo completo no backend para upload GCS (signed URL, validacao, persistencia e cleanup).
 
 Milestone: M4 - Login social (Google/Facebook)
 - [ ] Criar apps OAuth (Google/Facebook) com redirect URIs
@@ -59,7 +59,7 @@ Milestone: M5 - Frontend (integracao API)
 - [ ] Trocar armazenamento de token para Secure Storage no mobile.
 - [x] Integrar login/registro e editar perfil com apiFetch
 - [x] Carregar opcoes de perfil a partir do backend (fallback para mocks)
-- [ ] Padronizar API_BASE_URL por ambiente (dev/stage/prod) e documentar.
+- [x] Padronizar API_BASE_URL por ambiente (dev/stage/prod) e documentar.
 
 Milestone: M6 - Build mobile (Android/iOS)
 - [ ] Integrar Capacitor (ou RN) e configurar builds

@@ -3,6 +3,16 @@
 2. Run the app:
    `npm run dev`
 
+## Frontend env (`VITE_API_BASE_URL`)
+
+Use os arquivos de ambiente para apontar o frontend ao backend correto:
+
+- `.env.development`: `VITE_API_BASE_URL=http://localhost:8080`
+- `.env.staging`: `VITE_API_BASE_URL=https://app.thegamebrasil.com.br/api`
+- `.env.production`: `VITE_API_BASE_URL=https://app.thegamebrasil.com.br/api`
+
+Quando necessário, sobrescreva localmente em `.env`.
+
 ## Production (systemd)
 
 This repo includes `systemd` unit templates and scripts under `ops/` to:

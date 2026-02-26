@@ -10,6 +10,7 @@ import { registerProfileRoutes } from './routes/profile.js';
 import { registerFeedRoutes } from './routes/feed.js';
 import { registerChatRoutes } from './routes/chats.js';
 import { registerNotificationsRoutes } from './routes/notifications.js';
+import { registerPhotosRoutes } from './routes/photos.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -39,6 +40,7 @@ export async function buildApp() {
   await registerAuthRoutes(app, config);
   await registerOptionsRoutes(app, config);
   await registerProfileRoutes(app, config);
+  await registerPhotosRoutes(app, config);
   await registerFeedRoutes(app, config);
   await registerChatRoutes(app, config);
   await registerNotificationsRoutes(app, config);
