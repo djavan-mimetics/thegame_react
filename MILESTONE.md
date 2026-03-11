@@ -184,6 +184,7 @@ Geo (decidido):
 - [x] Notificações com marcação de lida (`POST /v1/notifications/:id/seen`)
 - [x] Chat realtime com WebSocket (`/v1/chats/:matchId/ws`) + fallback HTTP no frontend
 - [x] Endpoint de exclusão de conta (`POST /v1/auth/delete-account`) com validação de senha
+- [x] Rate limit em auth/swipes/chat + auditoria mínima persistida em banco
 
 ### M0 — Fundação (1 semana)
 - [x] Criar repositório do backend + CI básico (lint/test/build)
@@ -238,17 +239,20 @@ Smoketests (M4)
 - [x] WebSocket entrega `message.new` para o outro usuário
 
 ### M5 — Notificações (1 semana)
-- [ ] Gerar notificações (match, message, system)
+- [x] Gerar notificações automáticas de match e message
+- [x] Gerar notificações automáticas de system
 - [x] Marcar como visto
 
 Smoketests (M5)
-- [ ] Mensagem nova gera notificação para o destinatário
+- [x] Mensagem nova gera notificação para o destinatário
+- [x] Match novo gera notificação para os envolvidos
 - [x] `POST /v1/notifications/:id/seen` marca `seen_at`
 
 ### M6 — Denúncias & Moderação (1 semana)
 - [x] Criar/listar/detalhar tickets
 - [x] Fluxo mínimo de updates do suporte
-- [ ] Controles mínimos: status de usuário (ativo/suspenso/banido) e trilha de auditoria mínima
+- [ ] Controles mínimos: status de usuário (ativo/suspenso/banido)
+- [x] Trilha mínima de auditoria de ações sensíveis
 
 Smoketests (M6)
 - [x] `POST /v1/reports` cria ticket e aparece em `GET /v1/reports`
@@ -322,34 +326,48 @@ Esta seção substitui e unifica os itens do `thegame.todo`.
 - WebSocket realtime de chat (com fallback HTTP no frontend)
 - Marcação de notificação como lida
 - Exclusão de conta por endpoint autenticado
+- Rate limit em auth/swipes/chat + auditoria mínima persistida
 
-### Pendente (prioridade)
-1. **P0 — Configuração Stripe em produção**
-  - preencher secret key, price ids e webhook secret no env
-2. **P0 — OAuth social (Google/Facebook)**
-  - endpoints backend + integração frontend (PKCE)
-3. **P0 — Publicação/compliance**
-  - páginas públicas de suporte/exclusão + ajustes finais de política loja
-4. **P1 — Notificações de domínio**
-  - gerar automaticamente em eventos de match/message/system
-5. **P1 — Segurança e operação**
-  - rate limit, auditoria, backups, alertas, rollback
+### Pendente (prioridade para modo de testes completo)
+1. **P0 — OAuth social (Google/Facebook)**
+  - implementar endpoints backend e integrar fluxo no frontend
+2. **P0 — Cobertura de testes dos fluxos core já entregues**
+  - fechar gaps restantes de GCS real e billing real com webhook assinado
+3. **P1 — Persistência de preferências e perfil avançado**
+  - Security/Settings, preferências principais, localização e campos avançados do perfil
+4. **P1 — Persistência de preferências e perfil avançado**
+  - Security/Settings, preferências principais, localização e campos avançados do perfil
+5. **P1 — Stripe real para teste end-to-end**
+  - configurar env/webhook HTTPS para checkout e assinatura reais em staging/produção
+6. **P1 — Completar notificações de domínio**
+  - refinar payloads/títulos conforme UX e adicionar novos eventos quando surgirem
+7. **P2 — Publicação/compliance**
+  - páginas públicas estáveis e formulários das lojas
+8. **P2 — Operação contínua**
+  - backups, alertas e rollback
 
 ### Próxima execução recomendada
-- Concluir **configuração Stripe em produção** para liberar checkout real imediatamente.
+- Concluir **OAuth social + gaps restantes de cobertura automatizada** para colocar o app em modo de testes funcional completo.
 
 ## 10) Próximos passos executáveis (ordem atual)
 
-1. **Stripe live — liberar billing real**
+1. **OAuth social**
+  - Implementar `POST /v1/auth/oauth/google` e `POST /v1/auth/oauth/facebook`.
+  - Integrar fluxo no frontend e validar criação/vinculação de sessão.
+2. **Testes automatizados dos fluxos já entregues**
+  - Fechar cobertura de GCS real e billing real com assinatura Stripe.
+  - Consolidar smoke de banco real para os módulos principais.
+3. **Persistência de preferências e perfil avançado**
+  - Entregar `Security/Settings`, localização e campos avançados do perfil já refletidos no frontend.
+4. **Stripe real — liberar billing end-to-end**
   - Preencher `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_SEMIANNUAL`, `STRIPE_PRICE_ANNUAL`, `FRONTEND_BASE_URL`.
   - Expor backend em HTTPS e cadastrar webhook Stripe.
   - Executar smoke end-to-end de checkout + webhook + leitura de assinatura.
-2. **OAuth social**
-  - Implementar `POST /v1/auth/oauth/google` e `POST /v1/auth/oauth/facebook`.
-  - Integrar fluxo no frontend e validar criação/vinculação de sessão.
-3. **Publicação/compliance**
+5. **Notificações de domínio restantes**
+  - Refinar UX das notificações automáticas e adicionar novos eventos quando necessário.
+6. **Publicação/compliance**
   - Publicar páginas estáveis de suporte, privacidade, termos e exclusão de conta.
   - Fechar formulários de privacidade das lojas.
-4. **Hardening operacional**
+7. **Hardening operacional**
   - [x] Rate limit em auth, swipes e envio de mensagens + auditoria mínima de ações sensíveis.
   - [ ] Rotina de backup, alertas e rollback.

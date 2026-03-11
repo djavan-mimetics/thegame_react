@@ -10,19 +10,25 @@ Objetivo:
 ## 1) Estado atual de cobertura
 
 ### Já existe teste automatizado
-- `backend/test/health.test.ts`
-- `backend/test/auth.m1.test.ts` *(condicional com `SMOKE_DB=1`)*
+- `backend/test/health.test.ts` — cobre `GET /health`, `x-request-id` e `db=ok` quando executado com `SMOKE_DB=1`
+- `backend/test/auth.m1.test.ts` *(condicional com `SMOKE_DB=1`)* — cobre register/login/refresh/logout/forgot/reset/change-password/delete-account
+- `backend/test/core.m2-m7.test.ts` *(condicional com `SMOKE_DB=1`)* — cobre perfil/fotos, feed/swipes/likes, ranking, match/chat/notificações, WebSocket, denúncias e billing em cenários configurados/não configurados
 
 ### Ainda precisa de cobertura automatizada
-- Perfil
-- Fotos / GCS
-- Feed / swipes / likes
-- Chat / WebSocket
-- Notificações
-- Denúncias
-- Ranking
-- Billing Stripe
-- Exclusão de conta
+- Fotos / GCS com storage real
+- Billing Stripe real com webhook assinado
+- filtros geo/ranking nearby quando implementados
+
+## 1.1) Prioridade para colocar o app em modo de testes completo
+
+1. **P0 — Cobrir os fluxos já entregues do produto**
+   - Fechar os gaps restantes: GCS real e billing Stripe real com webhook assinado
+2. **P0 — Habilitar os fluxos ainda bloqueados na UI**
+   - OAuth Google/Facebook
+3. **P1 — Fechar lacunas funcionais visíveis em teste manual**
+   - localização, preferências principais e `Security/Settings`
+4. **P1 — Validar billing real em ambiente com Stripe configurado**
+   - checkout, webhook e leitura de assinatura/histórico
 
 ## 2) Ambientes de teste
 
@@ -59,12 +65,12 @@ Garantir que aplicação sobe, responde e fala com o banco.
 
 ### Automatizado
 - [x] `GET /health` retorna `200`
-- [ ] Health com banco real responde `db=ok`
+- [x] Health com banco real responde `db=ok`
 - [ ] Migrações sobem do zero em banco limpo
 
 ### Smoke manual
 - [x] Subir backend sem erro fatal
-- [ ] Confirmar header `x-request-id`
+- [x] Confirmar header `x-request-id`
 - [ ] Validar leitura do env correto
 
 ### Critério de aprovação
@@ -91,17 +97,17 @@ Garantir que aplicação sobe, responde e fala com o banco.
 ### Automatizado
 - [x] register/login/refresh/logout
 - [x] forgot/reset/change-password
-- [ ] delete-account
+- [x] delete-account
 - [ ] login com credenciais inválidas
 - [ ] refresh token reutilizado após rotação deve falhar
 - [ ] OAuth Google
 - [ ] OAuth Facebook
 
 ### Smoke manual
-- [ ] Criar conta nova
-- [ ] Fazer login e navegar no app autenticado
-- [ ] Trocar senha e logar novamente
-- [ ] Solicitar recuperação de senha
+- [x] Criar conta nova
+- [x] Fazer login e navegar no app autenticado
+- [x] Trocar senha e logar novamente
+- [x] Solicitar recuperação de senha
 - [ ] Excluir conta e validar revogação de sessão
 
 ### Critério de aprovação
@@ -124,13 +130,13 @@ Garantir que aplicação sobe, responde e fala com o banco.
 - `PUT /v1/me/location` *(pendente no roadmap)*
 
 ### Automatizado
-- [ ] obter perfil autenticado
-- [ ] atualizar perfil com payload válido
-- [ ] rejeitar payload inválido
+- [x] obter perfil autenticado
+- [x] atualizar perfil com payload válido
+- [x] rejeitar payload inválido
 - [ ] gerar upload URL com GCS configurado
-- [ ] completar foto e persistir metadados
-- [ ] reorder mantém ordem esperada
-- [ ] delete remove vínculo da foto
+- [x] completar foto e persistir metadados
+- [x] reorder mantém ordem esperada
+- [x] delete remove vínculo da foto
 
 ### Smoke manual
 - [ ] Editar perfil no frontend e recarregar tela
@@ -153,11 +159,11 @@ Garantir que aplicação sobe, responde e fala com o banco.
 - `GET /v1/likes`
 
 ### Automatizado
-- [ ] feed autenticado retorna lista paginada
+- [x] feed autenticado retorna lista paginada
 - [ ] cursor do feed funciona
-- [ ] swipe `like` persiste
-- [ ] swipe recíproco cria match
-- [ ] likes recebidas retornam corretamente
+- [x] swipe `like` persiste
+- [x] swipe recíproco cria match
+- [x] likes recebidas retornam corretamente
 - [ ] regras premium/free de limite diário
 - [ ] filtro geográfico por distância *(quando implementado)*
 
@@ -183,11 +189,11 @@ Garantir que aplicação sobe, responde e fala com o banco.
 - `GET /v1/chats/:matchId/ws`
 
 ### Automatizado
-- [ ] listar chats do usuário
-- [ ] listar mensagens de um match
-- [ ] enviar mensagem HTTP
-- [ ] negar envio para usuário sem acesso ao match
-- [ ] websocket entrega `message.new`
+- [x] listar chats do usuário
+- [x] listar mensagens de um match
+- [x] enviar mensagem HTTP
+- [x] negar envio para usuário sem acesso ao match
+- [x] websocket entrega `message.new`
 - [ ] paginação de mensagens *(quando concluída)*
 
 ### Smoke manual
@@ -210,10 +216,11 @@ Garantir que aplicação sobe, responde e fala com o banco.
 - `POST /v1/notifications/:id/seen`
 
 ### Automatizado
-- [ ] listar notificações do usuário
-- [ ] marcar notificação como vista
-- [ ] gerar notificação automática em evento de mensagem
-- [ ] gerar notificação automática em evento de match
+- [x] listar notificações do usuário
+- [x] marcar notificação como vista
+- [x] gerar notificação automática em evento de mensagem
+- [x] gerar notificação automática em evento de match
+- [x] gerar notificação automática em evento de system
 
 ### Smoke manual
 - [ ] Abrir lista de notificações
@@ -234,11 +241,11 @@ Garantir que aplicação sobe, responde e fala com o banco.
 - `GET /v1/reports/:id`
 
 ### Automatizado
-- [ ] criar denúncia válida
-- [ ] listar denúncias do denunciante
-- [ ] detalhar denúncia existente
+- [x] criar denúncia válida
+- [x] listar denúncias do denunciante
+- [x] detalhar denúncia existente
 - [ ] negar acesso a denúncia de outro usuário
-- [ ] validar updates do suporte
+- [x] validar updates do suporte
 
 ### Smoke manual
 - [ ] Abrir tela Report e enviar ticket
@@ -261,15 +268,15 @@ Garantir que aplicação sobe, responde e fala com o banco.
 - `POST /v1/billing/webhook`
 
 ### Automatizado
-- [ ] checkout falha com Stripe não configurado
-- [ ] checkout falha sem `price_id` configurado
+- [x] checkout falha com Stripe não configurado
+- [x] checkout falha sem `price_id` configurado
 - [ ] checkout retorna `url` quando Stripe está configurado
-- [ ] webhook rejeita request sem `stripe-signature`
+- [x] webhook rejeita request sem `stripe-signature`
 - [ ] webhook rejeita assinatura inválida
 - [ ] webhook `checkout.session.completed` cria assinatura/pagamento
 - [ ] webhook `invoice.payment_succeeded` atualiza status
 - [ ] webhook `invoice.payment_failed` marca `past_due`
-- [ ] cancelamento marca `cancel_at_period_end`
+- [x] cancelamento sem assinatura retorna `subscription_not_found`
 
 ### Smoke manual
 - [ ] Criar sessão de checkout real
@@ -294,7 +301,7 @@ Garantir que aplicação sobe, responde e fala com o banco.
 - `GET /v1/ranking/nearby` *(pendente)*
 
 ### Automatizado
-- [ ] ranking retorna lista ordenada
+- [x] ranking retorna lista ordenada
 - [ ] filtro por cidade/UF respeitado
 - [ ] nearby respeita raio configurado *(quando implementado)*
 

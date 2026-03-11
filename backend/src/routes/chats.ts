@@ -50,6 +50,44 @@ export async function registerChatRoutes(app: FastifyInstance, _config: AppConfi
     return (res.rowCount ?? 0) > 0;
   };
 
+  const findOtherUserId = async (matchId: string, userId: string) => {
+    const res = await app.db.pool.query(
+      `SELECT CASE WHEN user_a = $2 THEN user_b ELSE user_a END AS other_user_id
+       FROM matches
+       WHERE id = $1 AND ($2 = user_a OR $2 = user_b)
+       LIMIT 1`,
+      [matchId, userId]
+    );
+
+    return (res.rows[0] as { other_user_id?: string } | undefined)?.other_user_id ?? null;
+  };
+
+  const persistMessage = async (matchId: string, senderId: string, text: string) => {
+    const res = await app.db.pool.query(
+      `INSERT INTO messages (match_id, sender_id, body)
+       VALUES ($1, $2, $3)
+       RETURNING id, sender_id, body, created_at`,
+      [matchId, senderId, text]
+    );
+
+    const saved = res.rows[0];
+    const recipientUserId = await findOtherUserId(matchId, senderId);
+
+    if (recipientUserId) {
+      try {
+        await app.notifications.notifyMessageReceived({
+          recipientUserId,
+          senderUserId: senderId,
+          text
+        });
+      } catch (error) {
+        app.log.error({ err: error, matchId, senderId, recipientUserId }, 'message_notification_failed');
+      }
+    }
+
+    return saved;
+  };
+
   app.get('/v1/chats/:matchId/ws', { websocket: true }, async (connection, req) => {
     const matchId = (req.params as { matchId: string }).matchId;
     const userId = await getWsUserId(req.raw.url);
@@ -85,13 +123,7 @@ export async function registerChatRoutes(app: FastifyInstance, _config: AppConfi
       const parsedBody = z.object({ text: z.string().min(1).max(2000) }).safeParse({ text: data.text });
       if (!parsedBody.success) return;
 
-      const res = await app.db.pool.query(
-        `INSERT INTO messages (match_id, sender_id, body)
-         VALUES ($1, $2, $3)
-         RETURNING id, sender_id, body, created_at`,
-        [matchId, userId, parsedBody.data.text]
-      );
-      const saved = res.rows[0];
+      const saved = await persistMessage(matchId, userId, parsedBody.data.text);
 
       const sockets = rooms.get(matchId);
       if (!sockets || sockets.size === 0) return;
@@ -199,18 +231,13 @@ export async function registerChatRoutes(app: FastifyInstance, _config: AppConfi
     );
     if (match.rowCount === 0) return reply.code(403).send({ error: 'forbidden' });
 
-    const res = await app.db.pool.query(
-      `INSERT INTO messages (match_id, sender_id, body)
-       VALUES ($1, $2, $3)
-       RETURNING id, created_at`,
-      [matchId, userId, body.text]
-    );
+    const saved = await persistMessage(matchId, userId, body.text);
 
     return reply.send({
-      id: res.rows[0].id,
+      id: saved.id,
       senderId: userId,
       text: body.text,
-      timestamp: new Date(res.rows[0].created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      timestamp: new Date(saved.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
       isMe: true
     });
   });

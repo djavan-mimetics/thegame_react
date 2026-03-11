@@ -145,12 +145,21 @@ export async function registerFeedRoutes(app: FastifyInstance, _config: AppConfi
       );
       if ((res.rowCount ?? 0) > 0) {
         const [a, b] = userId < body.targetUserId ? [userId, body.targetUserId] : [body.targetUserId, userId];
-        await app.db.pool.query(
+        const matchInsert = await app.db.pool.query(
           `INSERT INTO matches (user_a, user_b)
            VALUES ($1, $2)
-           ON CONFLICT (user_a, user_b) DO NOTHING`,
+           ON CONFLICT (user_a, user_b) DO NOTHING
+           RETURNING id`,
           [a, b]
         );
+
+        if ((matchInsert.rowCount ?? 0) > 0) {
+          try {
+            await app.notifications.notifyMatchCreated({ userAId: a, userBId: b });
+          } catch (error) {
+            req.log.error({ err: error, userId, targetUserId: body.targetUserId }, 'match_notification_failed');
+          }
+        }
       }
     }
 

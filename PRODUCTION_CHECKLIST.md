@@ -4,11 +4,16 @@
 
 - ✅ Criação de conta por email/senha (`/v1/auth/register`)
 - ✅ Login por email/senha (`/v1/auth/login`)
+- ✅ Verificação de email + reset de senha por fluxo real
 - ✅ Forgot password end-to-end (`/v1/auth/forgot-password` → `/v1/auth/reset-password` → login com nova senha)
 - ✅ Feed/likes/chat/notifications com persistência em banco
+- ✅ Notificações automáticas de domínio para match e message
+- ✅ Notificações automáticas do tipo system (boas-vindas, email confirmado e denúncia recebida)
 - ✅ Upload de fotos com signed URL GCS (`/v1/profile/photos/upload-url`) em ambiente de deploy
 - ✅ Ranking via backend (`/v1/ranking`) integrado no frontend
 - ✅ Denúncias persistidas via backend (`POST /v1/reports`, `GET /v1/reports`, `GET /v1/reports/:id`)
+- ✅ Exclusão de conta autenticada
+- ✅ Rate limit em auth/swipes/chat + auditoria mínima persistida
 
 ## 2) Seeds aplicados
 
@@ -52,14 +57,22 @@ Status atual no banco:
 
 ## 4) O que falta no backend para funcionamento pleno
 
-### Alta prioridade (core produto)
-1. Configurar Stripe em produção (chaves + prices + webhook)
-2. OAuth social
+### Alta prioridade para modo de testes completo
+1. OAuth social
    - `POST /v1/auth/oauth/google`
    - `POST /v1/auth/oauth/facebook`
+2. Cobertura de testes dos módulos já entregues
+   - fechar gaps de GCS real e billing real com webhook assinado
+3. Persistência de preferências do app
+   - `Security / Settings`, localização e preferências principais do frontend
+4. Completar notificações de domínio
+   - refinamentos de UX/payload e novos eventos quando necessário
 
 ### Média prioridade
-3. Endpoint para exclusão de conta (requisito lojas)
+5. Stripe real em ambiente de teste
+   - chaves, prices, webhook HTTPS e smoke de checkout/webhook
+6. Operação contínua
+   - backup, alertas e rollback
 
 ## 5) Base para alta performance (milhares de usuários)
 

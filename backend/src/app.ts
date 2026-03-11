@@ -6,6 +6,7 @@ import rawBody from 'fastify-raw-body';
 import { randomUUID } from 'node:crypto';
 import { createAuditService } from './audit/service.js';
 import { createDb } from './db.js';
+import { createNotificationService } from './notifications/service.js';
 import { registerAuth } from './auth.js';
 import { getConfig, registerConfig } from './config.js';
 import { registerAuthRoutes } from './routes/auth.js';
@@ -61,9 +62,11 @@ export async function buildApp() {
 
   const db = createDb(config.DATABASE_URL);
   const audit = createAuditService(db);
+  const notifications = createNotificationService(db);
 
   app.decorate('db', db);
   app.decorate('audit', audit);
+  app.decorate('notifications', notifications);
 
   registerAuth(app, config);
 
@@ -104,6 +107,7 @@ declare module 'fastify' {
   interface FastifyInstance {
     db: ReturnType<typeof createDb>;
     audit: ReturnType<typeof createAuditService>;
+    notifications: ReturnType<typeof createNotificationService>;
   }
 
   interface FastifyRequest {

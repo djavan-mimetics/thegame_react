@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { buildApp } from '../src/app.js';
+import { authHeaders } from './helpers.js';
 
 const isDbSmoke = process.env.SMOKE_DB === '1';
 
 describe('M1 auth smoketests', () => {
-  it.skipIf(!isDbSmoke)('register/login/forgot/reset/change-password', async () => {
+  it.skipIf(!isDbSmoke)('register/login/forgot/reset/change-password/delete-account', async () => {
     process.env.PORT = '0';
     process.env.HOST = '127.0.0.1';
     process.env.CORS_ORIGIN = '*';
@@ -27,6 +28,14 @@ describe('M1 auth smoketests', () => {
     expect(regJson.accessToken).toBeTypeOf('string');
     expect(regJson.refreshToken).toBeTypeOf('string');
 
+    const initialNotifications = await app.inject({
+      method: 'GET',
+      url: '/v1/notifications',
+      headers: authHeaders(regJson.accessToken)
+    });
+    expect(initialNotifications.statusCode).toBe(200);
+    expect(initialNotifications.json().notifications.some((item: { type: string; title: string }) => item.type === 'system' && item.title === 'Conta criada com sucesso')).toBe(true);
+
     if (regJson.verificationToken) {
       const verifyEmail = await app.inject({
         method: 'POST',
@@ -34,6 +43,13 @@ describe('M1 auth smoketests', () => {
         payload: { token: regJson.verificationToken }
       });
       expect(verifyEmail.statusCode).toBe(200);
+
+      const afterVerifyNotifications = await app.inject({
+        method: 'GET',
+        url: '/v1/notifications',
+        headers: authHeaders(regJson.accessToken)
+      });
+      expect(afterVerifyNotifications.json().notifications.some((item: { type: string; title: string }) => item.type === 'system' && item.title === 'Email confirmado')).toBe(true);
     }
 
     const login = await app.inject({
@@ -111,6 +127,29 @@ describe('M1 auth smoketests', () => {
       payload: { refreshToken: refreshedJson.refreshToken }
     });
     expect(refreshAfterLogout.statusCode).toBe(401);
+
+    const deleteBad = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/delete-account',
+      headers: authHeaders(loginAfterReset.json().accessToken),
+      payload: { currentPassword: 'senha-errada' }
+    });
+    expect(deleteBad.statusCode).toBe(400);
+
+    const deleteOk = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/delete-account',
+      headers: authHeaders(loginAfterReset.json().accessToken),
+      payload: { currentPassword: resetPassword }
+    });
+    expect(deleteOk.statusCode).toBe(200);
+
+    const loginAfterDelete = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/login',
+      payload: { email, password: resetPassword }
+    });
+    expect(loginAfterDelete.statusCode).toBe(401);
 
     await app.close();
   }, 15000);

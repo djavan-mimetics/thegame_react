@@ -54,6 +54,15 @@ export async function registerReportsRoutes(app: FastifyInstance, _config: AppCo
       [report.id, 'Sua denúncia foi recebida. Nossa equipe iniciará a análise em até 24 horas.']
     );
 
+    try {
+      await app.notifications.notifyReportReceived({
+        userId: reporterUserId,
+        offenderName: body.offenderName
+      });
+    } catch (error) {
+      req.log.error({ err: error, reporterUserId, reportId: report.id }, 'system_notification_failed');
+    }
+
     return reply.code(201).send({
       report: {
         id: String(report.id ?? ''),

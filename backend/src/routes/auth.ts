@@ -170,6 +170,15 @@ export async function registerAuthRoutes(app: FastifyInstance, config: AppConfig
       metadata: { email, requiresEmailVerification: true }
     });
 
+    try {
+      await app.notifications.notifyWelcome({
+        userId: user.id,
+        requiresEmailVerification: true
+      });
+    } catch (error) {
+      req.log.error({ err: error, userId: user.id }, 'system_notification_failed');
+    }
+
     return reply.code(201).send({
       user: { id: user.id, email: user.email },
       accessToken,
@@ -348,6 +357,11 @@ export async function registerAuthRoutes(app: FastifyInstance, config: AppConfig
       userId: consumed.user_id,
       targetUserId: consumed.user_id
     });
+    try {
+      await app.notifications.notifyEmailVerified({ userId: consumed.user_id });
+    } catch (error) {
+      req.log.error({ err: error, userId: consumed.user_id }, 'system_notification_failed');
+    }
     return reply.send({ ok: true });
   });
 
