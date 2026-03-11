@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { jwtVerify } from 'jose';
 import { z } from 'zod';
 import type { AppConfig } from '../config.js';
 
@@ -8,6 +9,118 @@ const matchQuery = `SELECT m.id,
  WHERE m.user_a = $1 OR m.user_b = $1`;
 
 export async function registerChatRoutes(app: FastifyInstance, _config: AppConfig) {
+  const rooms = new Map<string, Map<string, any>>();
+  const accessSecret = _config.JWT_ACCESS_SECRET ?? '';
+  const accessSecretBytes = new TextEncoder().encode(accessSecret);
+  const messageRateLimit = {
+    preHandler: app.requireAuth,
+    config: {
+      rateLimit: {
+        max: 30,
+        timeWindow: '1 minute'
+      }
+    }
+  } as const;
+
+  const parseWsToken = (rawUrl?: string) => {
+    if (!rawUrl) return null;
+    const fakeBase = 'http://localhost';
+    const url = new URL(rawUrl, fakeBase);
+    const token = url.searchParams.get('accessToken');
+    return token && token.trim().length > 0 ? token : null;
+  };
+
+  const getWsUserId = async (rawUrl?: string) => {
+    if (!accessSecret) return null;
+    const token = parseWsToken(rawUrl);
+    if (!token) return null;
+    try {
+      const { payload } = await jwtVerify(token, accessSecretBytes);
+      return typeof payload.sub === 'string' ? payload.sub : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const userBelongsToMatch = async (matchId: string, userId: string) => {
+    const res = await app.db.pool.query(
+      `SELECT 1 FROM matches WHERE id = $1 AND ($2 = user_a OR $2 = user_b)`,
+      [matchId, userId]
+    );
+    return (res.rowCount ?? 0) > 0;
+  };
+
+  app.get('/v1/chats/:matchId/ws', { websocket: true }, async (connection, req) => {
+    const matchId = (req.params as { matchId: string }).matchId;
+    const userId = await getWsUserId(req.raw.url);
+
+    if (!userId) {
+      connection.socket.close(1008, 'unauthorized');
+      return;
+    }
+
+    const allowed = await userBelongsToMatch(matchId, userId);
+    if (!allowed) {
+      connection.socket.close(1008, 'forbidden');
+      return;
+    }
+
+    let room = rooms.get(matchId);
+    if (!room) {
+      room = new Map<string, any>();
+      rooms.set(matchId, room);
+    }
+    room.set(userId, connection.socket);
+
+    connection.socket.on('message', async (raw) => {
+      let data: { type?: string; text?: string } | null = null;
+      try {
+        const parsed = JSON.parse(String(raw));
+        data = parsed;
+      } catch {
+        return;
+      }
+
+      if (data?.type !== 'message') return;
+      const parsedBody = z.object({ text: z.string().min(1).max(2000) }).safeParse({ text: data.text });
+      if (!parsedBody.success) return;
+
+      const res = await app.db.pool.query(
+        `INSERT INTO messages (match_id, sender_id, body)
+         VALUES ($1, $2, $3)
+         RETURNING id, sender_id, body, created_at`,
+        [matchId, userId, parsedBody.data.text]
+      );
+      const saved = res.rows[0];
+
+      const sockets = rooms.get(matchId);
+      if (!sockets || sockets.size === 0) return;
+
+      for (const [targetUserId, socket] of sockets.entries()) {
+        if (socket.readyState !== socket.OPEN) continue;
+        socket.send(
+          JSON.stringify({
+            type: 'message',
+            message: {
+              id: String(saved.id ?? ''),
+              senderId: String(saved.sender_id ?? ''),
+              text: String(saved.body ?? ''),
+              timestamp: new Date(saved.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+              isMe: String(saved.sender_id ?? '') === targetUserId
+            }
+          })
+        );
+      }
+    });
+
+    connection.socket.on('close', () => {
+      const currentRoom = rooms.get(matchId);
+      if (!currentRoom) return;
+      currentRoom.delete(userId);
+      if (currentRoom.size === 0) rooms.delete(matchId);
+    });
+  });
+
   app.get('/v1/chats', { preHandler: app.requireAuth }, async (req) => {
     const userId = req.user!.userId;
     const res = await app.db.pool.query(
@@ -75,7 +188,7 @@ export async function registerChatRoutes(app: FastifyInstance, _config: AppConfi
     text: z.string().min(1).max(2000)
   });
 
-  app.post('/v1/chats/:matchId/messages', { preHandler: app.requireAuth }, async (req, reply) => {
+  app.post('/v1/chats/:matchId/messages', messageRateLimit, async (req, reply) => {
     const matchId = (req.params as { matchId: string }).matchId;
     const userId = req.user!.userId;
     const body = postSchema.parse(req.body);

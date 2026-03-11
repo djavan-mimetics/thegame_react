@@ -1,13 +1,18 @@
 
-import React, { useState } from 'react';
-import { RANKING_DATA, LOCATIONS } from '../constants';
+import React, { useEffect, useState } from 'react';
+import { LOCATIONS } from '../constants';
 import { Trophy, MapPin, X, ChevronDown } from 'lucide-react';
 import { Modal } from '../components/Modal';
+import { apiFetch } from '../apiClient';
+
+type RankingItem = { id: string; name: string; score: number; image: string };
 
 export const Ranking: React.FC = () => {
   // Default location state (simulating logged user profile)
   const [location, setLocation] = useState({ city: 'Rio de Janeiro', state: 'RJ' });
   const [isModalOpen, setIsModalOpen] = useState(false);
+    const [rankingData, setRankingData] = useState<RankingItem[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
   
   // Modal Selection State
   const [selectedState, setSelectedState] = useState<keyof typeof LOCATIONS>('RJ');
@@ -26,6 +31,20 @@ export const Ranking: React.FC = () => {
     setLocation({ city: selectedCity, state: selectedState });
     setIsModalOpen(false);
   };
+
+    useEffect(() => {
+        const loadRanking = async () => {
+            setIsLoading(true);
+            const res = await apiFetch(`/v1/ranking?state=${location.state}&city=${encodeURIComponent(location.city)}`);
+            if (res.ok) {
+                const data = (await res.json()) as { ranking: RankingItem[] };
+                setRankingData(data.ranking || []);
+            }
+            setIsLoading(false);
+        };
+
+        loadRanking();
+    }, [location.city, location.state]);
 
   return (
     <div className="h-full flex flex-col bg-brand-dark pt-6 px-4 pb-24 overflow-y-auto no-scrollbar relative">
@@ -64,7 +83,8 @@ export const Ranking: React.FC = () => {
 
       {/* Ranking List */}
       <div className="space-y-4">
-        {RANKING_DATA.map((user, index) => {
+        {isLoading && <p className="text-sm text-gray-500">Carregando ranking...</p>}
+        {!isLoading && rankingData.map((user, index) => {
             let rankColor = "text-white";
             let borderColor = "border-transparent";
             
@@ -85,12 +105,15 @@ export const Ranking: React.FC = () => {
                              <span className="text-xs text-gray-400">Pontos {user.score}</span>
                         </div>
                     </div>
-                    <button className="px-4 py-1.5 rounded-full bg-white/5 text-xs font-semibold text-brand-primary border border-brand-primary/20 hover:bg-brand-primary hover:text-white transition-colors">
+                                        <button className="px-4 py-1.5 rounded-full bg-white/5 text-xs font-semibold text-brand-primary border border-brand-primary/20 hover:bg-brand-primary hover:text-white transition-colors">
                         Ver
                     </button>
                 </div>
             );
         })}
+                {!isLoading && rankingData.length === 0 && (
+                    <p className="text-sm text-gray-500">Sem dados de ranking para esta localizacao.</p>
+                )}
       </div>
 
     {/* Location Selection Modal */}

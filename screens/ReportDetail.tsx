@@ -2,14 +2,67 @@
 import React from 'react';
 import { AppScreen, ReportTicket } from '../types';
 import { ArrowLeft, User, ShieldCheck } from 'lucide-react';
+import { apiFetch } from '../apiClient';
 
 interface ReportDetailProps {
   onNavigate: (screen: AppScreen) => void;
-  report: ReportTicket | null;
+    reportId: string | null;
 }
 
-export const ReportDetail: React.FC<ReportDetailProps> = ({ onNavigate, report }) => {
-  if (!report) return null;
+export const ReportDetail: React.FC<ReportDetailProps> = ({ onNavigate, reportId }) => {
+    const [report, setReport] = React.useState<ReportTicket | null>(null);
+    const [loading, setLoading] = React.useState(true);
+    const [error, setError] = React.useState<string | null>(null);
+
+    const loadReport = React.useCallback(async () => {
+        if (!reportId) {
+            setReport(null);
+            setLoading(false);
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+        try {
+            const res = await apiFetch(`/v1/reports/${reportId}`);
+            if (!res.ok) {
+                setError('Nao foi possivel carregar a denuncia.');
+                return;
+            }
+            const data = (await res.json()) as { report?: ReportTicket };
+            setReport(data.report ?? null);
+        } catch {
+            setError('Nao foi possivel carregar a denuncia.');
+        } finally {
+            setLoading(false);
+        }
+    }, [reportId]);
+
+    React.useEffect(() => {
+        loadReport();
+    }, [loadReport]);
+
+    if (loading) {
+        return (
+            <div className="h-full flex items-center justify-center bg-brand-dark text-xs text-gray-500">
+                Carregando denúncia...
+            </div>
+        );
+    }
+
+    if (error || !report) {
+        return (
+            <div className="h-full flex flex-col items-center justify-center bg-brand-dark text-xs text-red-300 gap-2 p-4 text-center">
+                <span>{error ?? 'Denúncia não encontrada.'}</span>
+                <button
+                    onClick={() => onNavigate(AppScreen.REPORT_LIST)}
+                    className="rounded-full border border-red-400/40 px-3 py-1 text-[10px] font-bold text-red-100 hover:bg-red-500/10"
+                >
+                    Voltar
+                </button>
+            </div>
+        );
+    }
 
   return (
     <div className="h-full flex flex-col bg-brand-dark">

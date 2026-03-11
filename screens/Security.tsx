@@ -3,12 +3,58 @@ import React from 'react';
 import { AppScreen } from '../types';
 import { ArrowLeft, Lock, FileText, EyeOff, Flag, HelpCircle, Info, LogOut, Trash2 } from 'lucide-react';
 import logoQD from '../src/img/logo_qd.png';
+import { clearSessionTokens } from '../authClient';
+import { apiFetch } from '../apiClient';
 
 interface SecurityProps {
   onNavigate: (screen: AppScreen) => void;
 }
 
 export const Security: React.FC<SecurityProps> = ({ onNavigate }) => {
+  const [isDeleting, setIsDeleting] = React.useState(false);
+
+  const handleLogout = async () => {
+    await clearSessionTokens();
+    onNavigate(AppScreen.WELCOME);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (isDeleting) return;
+    const confirmDelete = window.confirm('Tem certeza que deseja excluir sua conta? Esta ação é irreversível.');
+    if (!confirmDelete) return;
+
+    const password = window.prompt('Confirme sua senha para excluir sua conta:');
+    if (password === null) return;
+
+    setIsDeleting(true);
+    try {
+      const res = await apiFetch('/v1/auth/delete-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(password ? { currentPassword: password } : {})
+      });
+
+      if (!res.ok) {
+        const payload = (await res.json().catch(() => null)) as { error?: string } | null;
+        if (payload?.error === 'password_required') {
+          window.alert('Senha obrigatória para excluir a conta.');
+        } else if (payload?.error === 'invalid_current_password') {
+          window.alert('Senha atual inválida.');
+        } else {
+          window.alert('Não foi possível excluir sua conta agora.');
+        }
+        return;
+      }
+
+      await clearSessionTokens();
+      onNavigate(AppScreen.WELCOME);
+    } catch {
+      window.alert('Não foi possível excluir sua conta agora.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col bg-brand-dark overflow-y-auto no-scrollbar">
       {/* Header */}
@@ -35,7 +81,7 @@ export const Security: React.FC<SecurityProps> = ({ onNavigate }) => {
         <div className="mt-auto space-y-6 pb-10">
           <div className="space-y-4">
             <button 
-              onClick={() => onNavigate(AppScreen.WELCOME)}
+              onClick={handleLogout}
               className="w-full py-4 rounded-xl bg-gray-800 text-white font-bold flex items-center justify-center gap-2 hover:bg-gray-700 transition-colors"
             >
               <LogOut size={20} />
@@ -43,10 +89,12 @@ export const Security: React.FC<SecurityProps> = ({ onNavigate }) => {
             </button>
 
             <button 
+              onClick={handleDeleteAccount}
+              disabled={isDeleting}
               className="w-full py-4 rounded-xl border border-red-500/20 text-red-500 font-bold flex items-center justify-center gap-2 hover:bg-red-500/10 transition-colors"
             >
               <Trash2 size={20} />
-              Excluir Minha Conta
+              {isDeleting ? 'Excluindo...' : 'Excluir Minha Conta'}
             </button>
           </div>
 

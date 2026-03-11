@@ -30,6 +30,16 @@ const toPublicProfile = (row: any) => ({
 });
 
 export async function registerFeedRoutes(app: FastifyInstance, _config: AppConfig) {
+  const swipeRateLimit = {
+    preHandler: app.requireAuth,
+    config: {
+      rateLimit: {
+        max: 60,
+        timeWindow: '1 minute'
+      }
+    }
+  } as const;
+
   app.get('/v1/feed', { preHandler: app.requireAuth }, async (req) => {
     const userId = req.user!.userId;
     const { cursor, limit } = req.query as { cursor?: string; limit?: string };
@@ -116,7 +126,7 @@ export async function registerFeedRoutes(app: FastifyInstance, _config: AppConfi
     return { profiles, nextCursor };
   });
 
-  app.post('/v1/swipes', { preHandler: app.requireAuth }, async (req, reply) => {
+  app.post('/v1/swipes', swipeRateLimit, async (req, reply) => {
     const body = req.body as { targetUserId?: string; direction?: string };
     const userId = req.user!.userId;
     if (!body.targetUserId || !body.direction) return reply.code(400).send({ error: 'invalid_payload' });

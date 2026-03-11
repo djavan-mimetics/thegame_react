@@ -1,4 +1,5 @@
 import { Storage } from '@google-cloud/storage';
+import { existsSync } from 'node:fs';
 import type { AppConfig } from '../config.js';
 
 type GcsClient = {
@@ -8,29 +9,37 @@ type GcsClient = {
 };
 
 export function createGcsClient(config: AppConfig): GcsClient | null {
+  const credentialsFile = config.GCS_CREDENTIALS_FILE?.trim();
   const projectId = config.GCS_PROJECT_ID?.trim();
   const clientEmail = config.GCS_CLIENT_EMAIL?.trim();
   const privateKeyRaw = config.GCS_PRIVATE_KEY?.trim();
   const bucket = config.GCS_BUCKET?.trim();
 
   const invalidValues = new Set(['', 'changeme', 'CHANGE_ME']);
-  const looksConfigured =
+  const looksInlineConfigured =
     projectId && clientEmail && privateKeyRaw && bucket &&
     !invalidValues.has(projectId) &&
     !invalidValues.has(clientEmail) &&
     !invalidValues.has(privateKeyRaw) &&
     !invalidValues.has(bucket);
 
-  if (!looksConfigured) return null;
+  const looksFileConfigured =
+    projectId && bucket && credentialsFile && existsSync(credentialsFile) &&
+    !invalidValues.has(projectId) &&
+    !invalidValues.has(bucket) &&
+    !invalidValues.has(credentialsFile);
 
-  const privateKey = privateKeyRaw.replace(/\\n/g, '\n');
-  const storage = new Storage({
-    projectId,
-    credentials: {
-      client_email: clientEmail,
-      private_key: privateKey
-    }
-  });
+  if (!looksInlineConfigured && !looksFileConfigured) return null;
+
+  const storage = looksFileConfigured
+    ? new Storage({ projectId, keyFilename: credentialsFile })
+    : new Storage({
+        projectId,
+        credentials: {
+          client_email: clientEmail!,
+          private_key: privateKeyRaw!.replace(/\\n/g, '\n')
+        }
+      });
 
   const publicBaseUrl = (config.GCS_PUBLIC_BASE_URL?.trim() || `https://storage.googleapis.com/${bucket}`).replace(/\/$/, '');
 

@@ -1,6 +1,10 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
+import websocket from '@fastify/websocket';
+import rawBody from 'fastify-raw-body';
 import { randomUUID } from 'node:crypto';
+import { createAuditService } from './audit/service.js';
 import { createDb } from './db.js';
 import { registerAuth } from './auth.js';
 import { getConfig, registerConfig } from './config.js';
@@ -11,6 +15,9 @@ import { registerFeedRoutes } from './routes/feed.js';
 import { registerChatRoutes } from './routes/chats.js';
 import { registerNotificationsRoutes } from './routes/notifications.js';
 import { registerPhotosRoutes } from './routes/photos.js';
+import { registerRankingRoutes } from './routes/ranking.js';
+import { registerReportsRoutes } from './routes/reports.js';
+import { registerBillingRoutes } from './routes/billing.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -34,6 +41,29 @@ export async function buildApp() {
   await app.register(cors, {
     origin: config.CORS_ORIGIN === '*' ? true : config.CORS_ORIGIN.split(',').map((v) => v.trim())
   });
+  await app.register(websocket);
+  await app.register(rawBody, {
+    field: 'rawBody',
+    global: false,
+    encoding: 'utf8',
+    runFirst: true
+  });
+
+  await app.register(rateLimit, {
+    global: false,
+    addHeaders: {
+      'x-ratelimit-limit': true,
+      'x-ratelimit-remaining': true,
+      'x-ratelimit-reset': true,
+      'retry-after': true
+    }
+  });
+
+  const db = createDb(config.DATABASE_URL);
+  const audit = createAuditService(db);
+
+  app.decorate('db', db);
+  app.decorate('audit', audit);
 
   registerAuth(app, config);
 
@@ -44,10 +74,9 @@ export async function buildApp() {
   await registerFeedRoutes(app, config);
   await registerChatRoutes(app, config);
   await registerNotificationsRoutes(app, config);
-
-  const db = createDb(config.DATABASE_URL);
-
-  app.decorate('db', db);
+  await registerRankingRoutes(app, config);
+  await registerReportsRoutes(app, config);
+  await registerBillingRoutes(app, config);
 
   app.addHook('onClose', async () => {
     await db.close();
@@ -74,5 +103,10 @@ export async function buildApp() {
 declare module 'fastify' {
   interface FastifyInstance {
     db: ReturnType<typeof createDb>;
+    audit: ReturnType<typeof createAuditService>;
+  }
+
+  interface FastifyRequest {
+    rawBody?: string;
   }
 }

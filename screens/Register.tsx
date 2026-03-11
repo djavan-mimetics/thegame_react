@@ -8,6 +8,7 @@ import { TAGS_LIST, LOCATIONS, GENDER_OPTIONS, LOOKING_FOR_OPTIONS, RELATIONSHIP
 import { apiFetch } from '../apiClient';
 import { loadOptionsWithCache } from '../optionsCache';
 import { setSessionTokens } from '../authClient';
+import { uploadProfileImagesWithSignedUrl } from '../photoUploadClient';
 import logoQD from '../src/img/logo_qd.png';
 
 interface RegisterProps {
@@ -112,6 +113,7 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
   // Photo Editing State
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+    const [isSocialDevModalOpen, setIsSocialDevModalOpen] = useState(false);
   const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
   const [activePhotoIndex, setActivePhotoIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -151,6 +153,8 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
     setIsSubmitting(true);
 
     try {
+        const uploadedImages = await uploadProfileImagesWithSignedUrl(formData.images);
+
         const res = await apiFetch('/v1/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -158,7 +162,9 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
         });
 
         if (!res.ok) {
-            setSubmitError('Nao foi possivel criar a conta.');
+            const payload = (await res.json().catch(() => null)) as { error?: string } | null;
+            if (payload?.error === 'email_in_use') setSubmitError('Este email já está cadastrado.');
+            else setSubmitError('Não foi possível criar a conta.');
             return;
         }
 
@@ -179,7 +185,7 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
                 classification: formData.classification,
                 billSplit: formData.billSplit,
                 height: formData.height,
-                images: formData.images
+                images: uploadedImages
             })
         });
 
@@ -294,11 +300,20 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
             <p className="text-gray-400">Como você prefere entrar?</p>
         </div>
         <div className="flex-1 flex flex-col justify-center space-y-4">
-            <button onClick={() => { updateData('method', 'google'); setStep(2); }} className="w-full bg-white text-black font-bold py-3.5 px-6 rounded-full flex items-center justify-center gap-3 hover:bg-gray-100 transition-colors"><GoogleIcon />Continuar com Google</button>
-            <button onClick={() => { updateData('method', 'facebook'); setStep(2); }} className="w-full bg-[#1877F2] text-white font-bold py-3.5 px-6 rounded-full flex items-center justify-center gap-3 hover:bg-[#166fe5] transition-colors"><Facebook size={20} fill="currentColor" />Continuar com Facebook</button>
+            <button onClick={() => setIsSocialDevModalOpen(true)} className="w-full bg-white text-black font-bold py-3.5 px-6 rounded-full flex items-center justify-center gap-3 hover:bg-gray-100 transition-colors"><GoogleIcon />Continuar com Google</button>
+            <button onClick={() => setIsSocialDevModalOpen(true)} className="w-full bg-[#1877F2] text-white font-bold py-3.5 px-6 rounded-full flex items-center justify-center gap-3 hover:bg-[#166fe5] transition-colors"><Facebook size={20} fill="currentColor" />Continuar com Facebook</button>
             <div className="relative py-4"><div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-800"></div></div><div className="relative flex justify-center text-sm"><span className="px-2 bg-brand-dark text-gray-500">ou</span></div></div>
             <button onClick={() => { updateData('method', 'email'); handleNext(); }} className="w-full bg-brand-card border-2 border-brand-primary/50 text-white font-bold py-3.5 px-6 rounded-full flex items-center justify-center gap-3 hover:bg-brand-card/80 transition-colors"><Mail size={20} />Entrar com Email</button>
         </div>
+                <Modal open={isSocialDevModalOpen}>
+                    <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-brand-card p-6 text-center shadow-2xl">
+                        <h2 className="mb-2 text-2xl font-bold text-white">Em desenvolvimento</h2>
+                        <p className="mb-6 text-sm text-gray-400">
+                            O cadastro social com Google e Facebook ainda não está disponível. Por enquanto, crie sua conta por email.
+                        </p>
+                        <Button fullWidth onClick={() => setIsSocialDevModalOpen(false)}>Entendi</Button>
+                    </div>
+                </Modal>
                 <LogoFooter />
       </div>
     );

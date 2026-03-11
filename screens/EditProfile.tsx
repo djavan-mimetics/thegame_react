@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AppScreen, MyProfile } from '../types';
 import { TAGS_LIST, LOCATIONS } from '../constants';
 import { apiFetch } from '../apiClient';
+import { uploadProfileImagesWithSignedUrl } from '../photoUploadClient';
 import { loadOptionsWithCache } from '../optionsCache';
 import { ChevronLeft, Plus, ChevronRight, Moon, GraduationCap, Users, User, Ruler, HeartHandshake, Smile, Heart, Dog, Wine, Cigarette, Dumbbell, Pizza, X, Check, Sun, Trash2, Camera, Image as ImageIcon, RotateCcw, Facebook, Mail, Trophy, Calendar, MapPin, ChevronDown, Bell, Settings as SettingsIcon, Zap } from 'lucide-react';
 import { Modal } from '../components/Modal';
@@ -98,6 +99,7 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
   // --- State ---
   const [smartPhotos, setSmartPhotos] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+        const [saveError, setSaveError] = useState('');
     const [optionsData, setOptionsData] = useState({
         genders: OPTIONS.gender,
         lookingFor: OPTIONS.lookingFor,
@@ -681,44 +683,59 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
                     onClick={async () => {
                         if (isSaving) return;
                         setIsSaving(true);
-                        await apiFetch('/v1/profile', {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                name: myProfile.name,
-                                birthDate: myProfile.birthDate,
-                                city: myProfile.city,
-                                state: myProfile.state,
-                                gender: myProfile.gender,
-                                lookingFor: myProfile.lookingFor,
-                                relationship: profileData.relationship,
-                                classification: myProfile.classification,
-                                billSplit: myProfile.billSplit,
-                                height: myProfile.height,
-                                bio: myProfile.bio,
-                                rankingEnabled: myProfile.rankingEnabled,
-                                availableToday: myProfile.availableToday,
-                                currentTag: myProfile.currentTag,
-                                education: profileData.education,
-                                family: profileData.family,
-                                sign: profileData.sign,
-                                pets: profileData.pets,
-                                drink: profileData.drink,
-                                smoke: profileData.smoke,
-                                exercise: profileData.exercise,
-                                food: profileData.food,
-                                sleep: profileData.sleep,
-                                personality: profileData.personality ? [profileData.personality] : [],
-                                images: myProfile.images
-                            })
-                        });
-                        setIsSaving(false);
-                        onNavigate(AppScreen.HOME);
+                        setSaveError('');
+                        try {
+                            const uploadedImages = await uploadProfileImagesWithSignedUrl(myProfile.images);
+
+                            const saveRes = await apiFetch('/v1/profile', {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    name: myProfile.name,
+                                    birthDate: myProfile.birthDate,
+                                    city: myProfile.city,
+                                    state: myProfile.state,
+                                    gender: myProfile.gender,
+                                    lookingFor: myProfile.lookingFor,
+                                    relationship: profileData.relationship,
+                                    classification: myProfile.classification,
+                                    billSplit: myProfile.billSplit,
+                                    height: myProfile.height,
+                                    bio: myProfile.bio,
+                                    rankingEnabled: myProfile.rankingEnabled,
+                                    availableToday: myProfile.availableToday,
+                                    currentTag: myProfile.currentTag,
+                                    education: profileData.education,
+                                    family: profileData.family,
+                                    sign: profileData.sign,
+                                    pets: profileData.pets,
+                                    drink: profileData.drink,
+                                    smoke: profileData.smoke,
+                                    exercise: profileData.exercise,
+                                    food: profileData.food,
+                                    sleep: profileData.sleep,
+                                    personality: profileData.personality ? [profileData.personality] : [],
+                                    images: uploadedImages
+                                })
+                            });
+
+                            if (!saveRes.ok) {
+                                setSaveError('Nao foi possivel salvar o perfil.');
+                                return;
+                            }
+
+                            onNavigate(AppScreen.HOME);
+                        } catch (error) {
+                            setSaveError('Nao foi possivel enviar as fotos agora.');
+                        } finally {
+                            setIsSaving(false);
+                        }
                     }}
                     className="w-full py-4 bg-brand-primary rounded-full text-white font-bold hover:opacity-90 transition-opacity"
                 >
                     {isSaving ? 'Salvando...' : 'Concluir'}
                 </button>
+                {saveError && <p className="mt-3 text-sm text-red-400 text-center">{saveError}</p>}
             </div>
 
           </div>

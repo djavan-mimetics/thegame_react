@@ -5,6 +5,7 @@ import { Search, ChevronLeft, Send, Shield, X, ChevronRight, Heart } from 'lucid
 import { Modal } from '../components/Modal';
 import appIcon from '../src/img/icon1024.png';
 import { apiFetch } from '../apiClient';
+import { getAccessToken } from '../authClient';
 
 const MY_INTEREST_TAGS = ['Jogar videogame', 'Praia e água de côco', 'Tomar um café', 'Netflix', 'Vinho à dois'];
 const gradientBubbleClass = 'bg-gradient-to-r from-brand-primary to-brand-accent text-white shadow-lg border border-white/10';
@@ -33,7 +34,7 @@ const getTimestamp = () => new Date().toLocaleTimeString('pt-BR', { hour: '2-dig
 
 interface ChatProps {
     onNavigate: (screen: AppScreen) => void;
-    setReportContext?: (name: string) => void;
+    setReportContext?: (name: string, userId?: string) => void;
 }
 
 export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
@@ -49,6 +50,7 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
     const [chatsError, setChatsError] = useState<string | null>(null);
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [messagesError, setMessagesError] = useState<string | null>(null);
+    const [chatSocket, setChatSocket] = useState<WebSocket | null>(null);
 
     const activeProfile = selectedChat ? { tags: selectedChat.tags || [], images: selectedChat.images || [] } : null;
     const complimentOptions = selectedChat ? createCompliments(selectedChat.name, activeProfile?.tags || []) : [];
@@ -130,6 +132,49 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
         setIsGalleryOpen(false);
     }, [selectedChat]);
 
+    useEffect(() => {
+        let cancelled = false;
+        let socket: WebSocket | null = null;
+
+        const connectRealtime = async () => {
+            if (!selectedChat) return;
+
+            const token = await getAccessToken();
+            if (!token) return;
+
+            const apiBase = import.meta.env.VITE_API_BASE_URL || window.location.origin;
+            const wsBase = apiBase.replace(/^http/i, 'ws').replace(/\/$/, '');
+            const wsUrl = `${wsBase}/v1/chats/${selectedChat.id}/ws?accessToken=${encodeURIComponent(token)}`;
+
+            socket = new WebSocket(wsUrl);
+            socket.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(String(event.data)) as { type?: string; message?: Message };
+                    if (data.type !== 'message' || !data.message) return;
+                    setMessages((prev) => {
+                        if (prev.some((item) => item.id === data!.message!.id)) return prev;
+                        return [...prev, data.message!];
+                    });
+                } catch {
+                }
+            };
+
+            socket.onclose = () => {
+                if (!cancelled) setChatSocket(null);
+            };
+
+            if (!cancelled) setChatSocket(socket);
+        };
+
+        connectRealtime();
+
+        return () => {
+            cancelled = true;
+            if (socket && socket.readyState === WebSocket.OPEN) socket.close();
+            setChatSocket(null);
+        };
+    }, [selectedChat?.id]);
+
     const appendMessage = (text: string, variant?: Message['variant'], fromApp = false) => {
         if (!selectedChat) return;
         const trimmed = text.trim();
@@ -151,6 +196,12 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
         if (!messageText.trim()) return;
         const content = messageText;
         setMessageText('');
+
+        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({ type: 'message', text: content }));
+            return;
+        }
+
         appendMessage(content);
         apiFetch(`/v1/chats/${selectedChat?.id}/messages`, {
             method: 'POST',
@@ -222,7 +273,7 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
 
                         <button 
                             onClick={() => {
-                                if (setReportContext) setReportContext(selectedChat.name);
+                                if (setReportContext) setReportContext(selectedChat.name, selectedChat.userId);
                                 onNavigate(AppScreen.REPORT);
                             }}
                             className="p-2 -mr-2 text-red-500 hover:bg-red-500/10 rounded-full transition-colors"

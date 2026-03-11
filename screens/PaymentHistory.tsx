@@ -1,14 +1,40 @@
 
 import React from 'react';
-import { AppScreen } from '../types';
-import { MOCK_PAYMENTS } from '../constants';
+import { AppScreen, Payment } from '../types';
 import { ArrowLeft, CheckCircle2, XCircle, Clock, CreditCard } from 'lucide-react';
+import { apiFetch } from '../apiClient';
 
 interface PaymentHistoryProps {
   onNavigate: (screen: AppScreen) => void;
 }
 
 export const PaymentHistory: React.FC<PaymentHistoryProps> = ({ onNavigate }) => {
+    const [payments, setPayments] = React.useState<Payment[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
+    const [error, setError] = React.useState<string | null>(null);
+
+    const loadPayments = React.useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const res = await apiFetch('/v1/billing/payments');
+            if (!res.ok) {
+                setError('Nao foi possivel carregar os pagamentos.');
+                return;
+            }
+            const data = (await res.json()) as { payments?: Payment[] };
+            setPayments(Array.isArray(data.payments) ? data.payments : []);
+        } catch {
+            setError('Nao foi possivel carregar os pagamentos.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    React.useEffect(() => {
+        loadPayments();
+    }, [loadPayments]);
+
   return (
     <div className="h-full flex flex-col bg-brand-dark overflow-y-auto no-scrollbar">
       {/* Header */}
@@ -20,8 +46,20 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({ onNavigate }) =>
       </div>
 
       <div className="p-4 space-y-4">
-        {MOCK_PAYMENTS.length > 0 ? (
-            MOCK_PAYMENTS.map((payment) => (
+        {isLoading && <p className="text-center text-sm text-gray-500">Carregando pagamentos...</p>}
+        {error && (
+            <div className="text-center text-xs text-red-300 flex flex-col items-center gap-2">
+                <span>{error}</span>
+                <button
+                    onClick={loadPayments}
+                    className="rounded-full border border-red-400/40 px-3 py-1 text-[10px] font-bold text-red-100 hover:bg-red-500/10"
+                >
+                    Tentar novamente
+                </button>
+            </div>
+        )}
+        {!isLoading && !error && payments.length > 0 ? (
+            payments.map((payment) => (
                 <div key={payment.id} className="bg-brand-card border border-white/5 rounded-xl p-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
@@ -51,9 +89,9 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({ onNavigate }) =>
                 </div>
             ))
         ) : (
-            <div className="text-center py-10">
+                        !isLoading && !error && <div className="text-center py-10">
                 <p className="text-gray-500">Nenhum pagamento encontrado.</p>
-            </div>
+                        </div>
         )}
       </div>
     </div>

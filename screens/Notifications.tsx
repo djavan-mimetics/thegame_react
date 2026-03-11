@@ -18,6 +18,7 @@ export const Notifications: React.FC<NotificationsProps> = ({ onNavigate }) => {
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [markingId, setMarkingId] = useState<string | null>(null);
 
   const loadNotifications = async () => {
     setIsLoading(true);
@@ -40,6 +41,24 @@ export const Notifications: React.FC<NotificationsProps> = ({ onNavigate }) => {
   useEffect(() => {
     loadNotifications();
   }, []);
+
+  const markAsSeen = async (notificationId: string) => {
+    if (markingId === notificationId) return;
+
+    setMarkingId(notificationId);
+    setItems((prev) => prev.map((item) => (item.id === notificationId ? { ...item, seen: true } : item)));
+    try {
+      const res = await apiFetch(`/v1/notifications/${notificationId}/seen`, { method: 'POST' });
+      if (!res.ok) {
+        setItems((prev) => prev.map((item) => (item.id === notificationId ? { ...item, seen: false } : item)));
+      }
+    } catch {
+      setItems((prev) => prev.map((item) => (item.id === notificationId ? { ...item, seen: false } : item)));
+    } finally {
+      setMarkingId((current) => (current === notificationId ? null : current));
+    }
+  };
+
   return (
     <div className="h-full flex flex-col bg-brand-dark text-white pt-12 pb-8">
       <header className="px-4 mb-8 flex items-center gap-4">
@@ -92,8 +111,13 @@ export const Notifications: React.FC<NotificationsProps> = ({ onNavigate }) => {
         {items.map((notification) => {
           const style = typeStyles[notification.type];
           return (
-            <div
+            <button
               key={notification.id}
+              type="button"
+              onClick={() => {
+                if (!notification.seen) void markAsSeen(notification.id);
+              }}
+              disabled={markingId === notification.id}
               className={`rounded-3xl border border-white/5 p-4 bg-gradient-to-r ${style.accent} flex gap-4 hover:border-white/20 transition-colors`}
             >
               <div className="w-12 h-12 rounded-2xl bg-black/30 flex items-center justify-center border border-white/5">
@@ -109,7 +133,7 @@ export const Notifications: React.FC<NotificationsProps> = ({ onNavigate }) => {
                 <p className="text-sm text-gray-300 leading-snug">{notification.description}</p>
                 <p className="text-xs text-gray-500 mt-2">{notification.timestamp}</p>
               </div>
-            </div>
+            </button>
           );
         })}
       </div>

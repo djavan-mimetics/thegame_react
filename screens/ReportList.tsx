@@ -2,14 +2,40 @@
 import React from 'react';
 import { AppScreen, ReportTicket } from '../types';
 import { ArrowLeft, Flag, ChevronRight, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { apiFetch } from '../apiClient';
 
 interface ReportListProps {
   onNavigate: (screen: AppScreen) => void;
-  reports: ReportTicket[];
   onSelectReport: (id: string) => void;
 }
 
-export const ReportList: React.FC<ReportListProps> = ({ onNavigate, reports, onSelectReport }) => {
+export const ReportList: React.FC<ReportListProps> = ({ onNavigate, onSelectReport }) => {
+    const [reports, setReports] = React.useState<ReportTicket[]>([]);
+    const [loading, setLoading] = React.useState(true);
+    const [error, setError] = React.useState<string | null>(null);
+
+    const loadReports = React.useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const res = await apiFetch('/v1/reports');
+            if (!res.ok) {
+                setError('Nao foi possivel carregar suas denuncias.');
+                return;
+            }
+            const data = (await res.json()) as { reports?: ReportTicket[] };
+            setReports(Array.isArray(data.reports) ? data.reports : []);
+        } catch {
+            setError('Nao foi possivel carregar suas denuncias.');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    React.useEffect(() => {
+        loadReports();
+    }, [loadReports]);
+
   return (
     <div className="min-h-screen min-h-[100dvh] flex flex-col bg-brand-dark overflow-y-auto no-scrollbar">
       {/* Header */}
@@ -21,6 +47,18 @@ export const ReportList: React.FC<ReportListProps> = ({ onNavigate, reports, onS
       </div>
 
       <div className="p-4 space-y-4">
+                {loading && <p className="text-center text-xs text-gray-500">Carregando denúncias...</p>}
+                {error && (
+                    <div className="text-center text-xs text-red-300 flex flex-col items-center gap-2">
+                        <span>{error}</span>
+                        <button
+                            onClick={loadReports}
+                            className="rounded-full border border-red-400/40 px-3 py-1 text-[10px] font-bold text-red-100 hover:bg-red-500/10"
+                        >
+                            Tentar novamente
+                        </button>
+                    </div>
+                )}
         {reports.length > 0 ? (
             reports.map((report) => (
                 <button 

@@ -27,6 +27,15 @@ describe('M1 auth smoketests', () => {
     expect(regJson.accessToken).toBeTypeOf('string');
     expect(regJson.refreshToken).toBeTypeOf('string');
 
+    if (regJson.verificationToken) {
+      const verifyEmail = await app.inject({
+        method: 'POST',
+        url: '/v1/auth/verify-email',
+        payload: { token: regJson.verificationToken }
+      });
+      expect(verifyEmail.statusCode).toBe(200);
+    }
+
     const login = await app.inject({
       method: 'POST',
       url: '/v1/auth/login',
@@ -104,5 +113,5 @@ describe('M1 auth smoketests', () => {
     expect(refreshAfterLogout.statusCode).toBe(401);
 
     await app.close();
-  });
+  }, 15000);
 });

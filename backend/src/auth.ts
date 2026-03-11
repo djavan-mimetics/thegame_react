@@ -37,6 +37,13 @@ export function createRequireAuth(config: AppConfig) {
       const { payload } = await jwtVerify(token, secretBytes);
       const sub = typeof payload.sub === 'string' ? payload.sub : null;
       if (!sub) return reply.code(401).send({ error: 'unauthorized' });
+
+      const userRes = await request.server.db.pool.query(
+        'SELECT 1 FROM users WHERE id = $1 AND status = $2 LIMIT 1',
+        [sub, 'active']
+      );
+      if ((userRes.rowCount ?? 0) === 0) return reply.code(401).send({ error: 'unauthorized' });
+
       request.user = { userId: sub };
     } catch {
       return reply.code(401).send({ error: 'unauthorized' });

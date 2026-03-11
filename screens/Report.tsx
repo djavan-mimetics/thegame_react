@@ -1,22 +1,24 @@
 
 import React, { useState, useEffect } from 'react';
-import { AppScreen, ReportTicket } from '../types';
+import { AppScreen } from '../types';
 import { Button } from '../components/Button';
-import { ArrowLeft, Send, Check, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Send, AlertTriangle } from 'lucide-react';
+import { apiFetch } from '../apiClient';
 
 interface ReportProps {
   onNavigate: (screen: AppScreen) => void;
-  initialContext?: { name: string; date: string } | null;
-  addReport?: (report: ReportTicket) => void;
+    initialContext?: { name: string; date: string; userId?: string } | null;
 }
 
-export const Report: React.FC<ReportProps> = ({ onNavigate, initialContext, addReport }) => {
+export const Report: React.FC<ReportProps> = ({ onNavigate, initialContext }) => {
   const [formData, setFormData] = useState({
       name: '',
       date: '',
       reason: '',
       description: ''
   });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialContext) {
@@ -33,31 +35,33 @@ export const Report: React.FC<ReportProps> = ({ onNavigate, initialContext, addR
     }
   }, [initialContext]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
-      
-      const newReport: ReportTicket = {
-          id: Date.now().toString(),
-          offenderName: formData.name,
-          date: formData.date,
-          reason: formData.reason,
-          description: formData.description,
-          status: 'Pendente',
-          updates: [
-              {
-                  id: '1',
-                  sender: 'support',
-                  text: 'Sua denúncia foi recebida. Nossa equipe iniciará a análise em até 24 horas.',
-                  timestamp: 'Agora'
-              }
-          ]
-      };
 
-      if (addReport) {
-          addReport(newReport);
-      }
-
-      onNavigate(AppScreen.REPORT_LIST);
+            setIsSubmitting(true);
+            setSubmitError(null);
+            try {
+                const res = await apiFetch('/v1/reports', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        offenderName: formData.name,
+                        date: formData.date,
+                        reason: formData.reason,
+                        description: formData.description,
+                        accusedUserId: initialContext?.userId ?? null
+                    })
+                });
+                if (!res.ok) {
+                    setSubmitError('Nao foi possivel enviar a denuncia. Tente novamente.');
+                    return;
+                }
+                onNavigate(AppScreen.REPORT_LIST);
+            } catch {
+                setSubmitError('Nao foi possivel enviar a denuncia. Tente novamente.');
+            } finally {
+                setIsSubmitting(false);
+            }
   };
 
   return (
@@ -133,8 +137,9 @@ export const Report: React.FC<ReportProps> = ({ onNavigate, initialContext, addR
             </div>
 
             <Button fullWidth type="submit" className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 shadow-none border-none">
-                <Send size={18} /> Enviar Denúncia
+                                <Send size={18} /> {isSubmitting ? 'Enviando...' : 'Enviar Denúncia'}
             </Button>
+                        {submitError && <p className="text-center text-xs text-red-300">{submitError}</p>}
         </form>
       </div>
     </div>

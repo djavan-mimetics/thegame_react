@@ -1,7 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AppScreen } from '../types';
 import { Button } from '../components/Button';
+import { Modal } from '../components/Modal';
 import { ArrowLeft, Mail, Facebook } from 'lucide-react';
 import logoQD from '../src/img/logo_qd.png';
 import { apiFetch } from '../apiClient';
@@ -12,11 +13,20 @@ interface LoginProps {
 }
 
 export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
+  const [authNotice, setAuthNotice] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginMethod, setLoginMethod] = useState<'selection' | 'email'>('selection');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSocialDevModalOpen, setIsSocialDevModalOpen] = useState(false);
+
+  useEffect(() => {
+    const notice = sessionStorage.getItem('thegame_auth_notice');
+    if (!notice) return;
+    setAuthNotice(notice);
+    sessionStorage.removeItem('thegame_auth_notice');
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +40,9 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
       });
 
       if (!res.ok) {
-        setError('Email ou senha invalidos.');
+        const payload = (await res.json().catch(() => null)) as { error?: string } | null;
+        if (payload?.error === 'user_blocked') setError('Sua conta não está disponível para login.');
+        else setError('Email ou senha inválidos.');
         return;
       }
 
@@ -79,10 +91,16 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
         <p className="text-gray-400">Faça login para continuar.</p>
         </div>
 
+      {authNotice && (
+        <div className="mb-4 rounded-2xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-200">
+          {authNotice}
+        </div>
+      )}
+
       {loginMethod === 'selection' ? (
         <div className="flex-1 flex flex-col justify-center space-y-4">
             <button 
-                onClick={() => onNavigate(AppScreen.HOME)}
+                onClick={() => setIsSocialDevModalOpen(true)}
                 className="w-full bg-white text-black font-bold py-3.5 px-6 rounded-full flex items-center justify-center gap-3 hover:bg-gray-100 transition-colors"
             >
                 <GoogleIcon />
@@ -90,7 +108,7 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
             </button>
 
             <button 
-                onClick={() => onNavigate(AppScreen.HOME)}
+                onClick={() => setIsSocialDevModalOpen(true)}
                 className="w-full bg-[#1877F2] text-white font-bold py-3.5 px-6 rounded-full flex items-center justify-center gap-3 hover:bg-[#166fe5] transition-colors"
             >
                 <Facebook size={20} fill="currentColor" />
@@ -169,6 +187,18 @@ export const Login: React.FC<LoginProps> = ({ onNavigate }) => {
             className="w-16 h-16 object-contain opacity-90"
         />
       </footer>
+
+      <Modal open={isSocialDevModalOpen}>
+        <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-brand-card p-6 text-center shadow-2xl">
+          <h2 className="mb-2 text-2xl font-bold text-white">Em desenvolvimento</h2>
+          <p className="mb-6 text-sm text-gray-400">
+            O login social com Google e Facebook ainda não está disponível. Por enquanto, entre com uma conta criada por email.
+          </p>
+          <Button fullWidth onClick={() => setIsSocialDevModalOpen(false)}>
+            Entendi
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 };

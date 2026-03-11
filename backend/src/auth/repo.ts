@@ -5,11 +5,12 @@ export type DbUser = {
   email: string;
   password_hash: string | null;
   status: string;
+  email_verified_at: Date | null;
 };
 
 export async function findUserByEmail(db: Db, email: string): Promise<DbUser | null> {
   const res = await db.pool.query(
-    'SELECT id, email, password_hash, status FROM users WHERE email = $1 LIMIT 1',
+    'SELECT id, email, password_hash, status, email_verified_at FROM users WHERE email = $1 LIMIT 1',
     [email]
   );
   return (res.rows[0] as DbUser | undefined) ?? null;
@@ -17,7 +18,7 @@ export async function findUserByEmail(db: Db, email: string): Promise<DbUser | n
 
 export async function findUserById(db: Db, userId: string): Promise<DbUser | null> {
   const res = await db.pool.query(
-    'SELECT id, email, password_hash, status FROM users WHERE id = $1 LIMIT 1',
+    'SELECT id, email, password_hash, status, email_verified_at FROM users WHERE id = $1 LIMIT 1',
     [userId]
   );
   return (res.rows[0] as DbUser | undefined) ?? null;
@@ -25,7 +26,7 @@ export async function findUserById(db: Db, userId: string): Promise<DbUser | nul
 
 export async function createEmailUser(db: Db, input: { email: string; passwordHash: string }): Promise<DbUser> {
   const res = await db.pool.query(
-    'INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email, password_hash, status',
+    'INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email, password_hash, status, email_verified_at',
     [input.email, input.passwordHash]
   );
   return res.rows[0] as DbUser;
@@ -133,6 +134,38 @@ export async function createPasswordResetToken(db: Db, input: { userId: string; 
   return res.rows[0] as { id: string };
 }
 
+export async function createEmailVerificationToken(db: Db, input: { userId: string; tokenHash: string; expiresAt: Date }) {
+  const res = await db.pool.query(
+    `INSERT INTO email_verification_tokens (user_id, token_hash, expires_at)
+     VALUES ($1, $2, $3)
+     RETURNING id`,
+    [input.userId, input.tokenHash, input.expiresAt]
+  );
+  return res.rows[0] as { id: string };
+}
+
+export async function consumeEmailVerificationToken(db: Db, input: { tokenHash: string }) {
+  const res = await db.pool.query(
+    `UPDATE email_verification_tokens
+     SET consumed_at = now()
+     WHERE token_hash = $1
+       AND consumed_at IS NULL
+       AND expires_at > now()
+     RETURNING user_id`,
+    [input.tokenHash]
+  );
+  return (res.rows[0] as { user_id: string } | undefined) ?? null;
+}
+
+export async function markUserEmailVerified(db: Db, input: { userId: string }) {
+  await db.pool.query(
+    `UPDATE users
+     SET email_verified_at = COALESCE(email_verified_at, now())
+     WHERE id = $1`,
+    [input.userId]
+  );
+}
+
 export async function consumePasswordResetToken(db: Db, input: { tokenHash: string }) {
   const res = await db.pool.query(
     `UPDATE password_reset_tokens
@@ -148,4 +181,8 @@ export async function consumePasswordResetToken(db: Db, input: { tokenHash: stri
 
 export async function updateUserPasswordHash(db: Db, input: { userId: string; passwordHash: string }) {
   await db.pool.query('UPDATE users SET password_hash = $2 WHERE id = $1', [input.userId, input.passwordHash]);
+}
+
+export async function deleteUserById(db: Db, input: { userId: string }) {
+  await db.pool.query('DELETE FROM users WHERE id = $1', [input.userId]);
 }

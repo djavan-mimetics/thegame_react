@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { AppScreen, MyProfile, ReportTicket } from './types';
+import { AppScreen } from './types';
 import { Welcome } from './screens/Welcome';
 import { Login } from './screens/Login';
 import { Register } from './screens/Register';
@@ -18,47 +18,50 @@ import { Help } from './screens/Help';
 import { PaymentHistory } from './screens/PaymentHistory';
 import { ChangePassword } from './screens/ChangePassword';
 import { ForgotPassword } from './screens/ForgotPassword';
+import { ResetPassword } from './screens/ResetPassword';
 import { Report } from './screens/Report';
 import { ReportList } from './screens/ReportList';
 import { ReportDetail } from './screens/ReportDetail';
 import { About } from './screens/About';
 import { Rules } from './screens/Rules';
 import { Notifications } from './screens/Notifications';
-import { MOCK_REPORTS } from './constants';
-import { refreshSession } from './authClient';
+import { getAccessToken, refreshSession } from './authClient';
 import { apiFetch } from './apiClient';
+import { useAppState } from './AppStateContext';
+
+const PROTECTED_SCREENS = new Set<AppScreen>([
+  AppScreen.HOME,
+  AppScreen.RANKING,
+  AppScreen.LIKES,
+  AppScreen.CHAT,
+  AppScreen.PROFILE,
+  AppScreen.EDIT_PROFILE,
+  AppScreen.PREMIUM,
+  AppScreen.PAYMENT_HISTORY,
+  AppScreen.SECURITY,
+  AppScreen.HELP,
+  AppScreen.CHANGE_PASSWORD,
+  AppScreen.NOTIFICATIONS,
+  AppScreen.REPORT,
+  AppScreen.REPORT_LIST,
+  AppScreen.REPORT_DETAIL
+]);
 
 const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>(AppScreen.WELCOME);
+  const [resetPasswordToken, setResetPasswordToken] = useState<string | null>(null);
+  const {
+    isAuthenticated,
+    setIsAuthenticated,
+    isPremium,
+    setIsPremium,
+    myProfile,
+    setMyProfile,
+    updateProfile
+  } = useAppState();
   
-  // Global User State
-  const [isPremium, setIsPremium] = useState(false);
-  const [myProfile, setMyProfile] = useState<MyProfile>({
-    name: 'Lucas',
-    birthDate: '15/06/1996',
-    city: 'Rio de Janeiro',
-    state: 'RJ',
-    gender: 'Homem',
-    lookingFor: ['Mulheres'],
-    images: ['https://picsum.photos/400/600?random=99', 'https://picsum.photos/400/600?random=100'],
-    bio: 'Designer de dia, gamer à noite. Procurando alguém para me carregar nas rankeadas.',
-    rankingEnabled: true,
-    loginMethod: 'google',
-    height: '',
-    currentTag: 'Jogar videogame',
-    classification: '',
-    billSplit: '',
-    availableToday: false
-  });
-
-  // Report System State
-  const [reports, setReports] = useState<ReportTicket[]>(MOCK_REPORTS);
-  const [reportContext, setReportContext] = useState<{name: string, date: string} | null>(null);
+  const [reportContext, setReportContext] = useState<{name: string, date: string, userId?: string} | null>(null);
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
-
-  const updateProfile = (key: keyof MyProfile, value: any) => {
-    setMyProfile(prev => ({ ...prev, [key]: value }));
-  };
 
   const calculateCompletion = () => {
     let score = 0;
@@ -81,11 +84,17 @@ const App: React.FC = () => {
     return Math.min(score, 100);
   };
 
-  const addReport = (report: ReportTicket) => {
-      setReports(prev => [report, ...prev]);
-  };
-
   const navigate = (screen: AppScreen) => {
+    if (PROTECTED_SCREENS.has(screen) && !isAuthenticated) {
+      setCurrentScreen(AppScreen.LOGIN);
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    if (screen === AppScreen.HOME && [AppScreen.LOGIN, AppScreen.REGISTER, AppScreen.FORGOT_PASSWORD].includes(currentScreen)) {
+      setIsAuthenticated(true);
+    }
+
     setCurrentScreen(screen);
     // Scroll to top when changing screens
     window.scrollTo(0, 0);
@@ -93,8 +102,16 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const loadProfile = async () => {
+      const accessToken = await getAccessToken();
+      if (accessToken) setIsAuthenticated(true);
+
       const ok = await refreshSession();
-      if (!ok) return;
+      if (!ok) {
+        if (PROTECTED_SCREENS.has(currentScreen)) setCurrentScreen(AppScreen.LOGIN);
+        setIsAuthenticated(false);
+        return;
+      }
+      setIsAuthenticated(true);
 
       const res = await apiFetch('/v1/profile');
       if (!res.ok) return;
@@ -123,13 +140,55 @@ const App: React.FC = () => {
     loadProfile();
   }, []);
 
+  useEffect(() => {
+    if (!isAuthenticated && PROTECTED_SCREENS.has(currentScreen)) {
+      setCurrentScreen(AppScreen.LOGIN);
+    }
+  }, [currentScreen, isAuthenticated]);
+
   const handleSelectReport = (id: string) => {
       setSelectedReportId(id);
       navigate(AppScreen.REPORT_DETAIL);
   };
 
+  useEffect(() => {
+    const handleAuthQueryActions = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const verifyEmailToken = params.get('verifyEmailToken');
+      const resetToken = params.get('resetPasswordToken');
+
+      if (!verifyEmailToken && !resetToken) return;
+
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      if (verifyEmailToken) {
+        const res = await apiFetch('/v1/auth/verify-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: verifyEmailToken })
+        });
+
+        sessionStorage.setItem(
+          'thegame_auth_notice',
+          res.ok
+            ? 'Email confirmado com sucesso.'
+            : 'O link de confirmação é inválido ou expirou.'
+        );
+        setCurrentScreen(AppScreen.LOGIN);
+        return;
+      }
+
+      if (resetToken) {
+        setResetPasswordToken(resetToken);
+        setCurrentScreen(AppScreen.RESET_PASSWORD);
+      }
+    };
+
+    handleAuthQueryActions();
+  }, []);
+
   // Helper to check if bottom nav should be visible
-  const showBottomNav = [
+  const showBottomNav = isAuthenticated && [
     AppScreen.HOME, 
     AppScreen.RANKING, 
     AppScreen.LIKES, 
@@ -144,11 +203,12 @@ const App: React.FC = () => {
       {currentScreen === AppScreen.LOGIN && <Login onNavigate={navigate} />}
       {currentScreen === AppScreen.REGISTER && <Register onNavigate={navigate} />}
       {currentScreen === AppScreen.FORGOT_PASSWORD && <ForgotPassword onNavigate={navigate} />}
+      {currentScreen === AppScreen.RESET_PASSWORD && <ResetPassword onNavigate={navigate} token={resetPasswordToken} />}
       
       {currentScreen === AppScreen.HOME && <Home onNavigate={navigate} />}
       {currentScreen === AppScreen.RANKING && <Ranking />}
       {currentScreen === AppScreen.LIKES && <Likes isPremium={isPremium} onNavigate={navigate} />}
-      {currentScreen === AppScreen.CHAT && <Chat onNavigate={navigate} setReportContext={(name) => setReportContext({name, date: new Date().toLocaleDateString()})} />}
+      {currentScreen === AppScreen.CHAT && <Chat onNavigate={navigate} setReportContext={(name, userId) => setReportContext({name, userId, date: new Date().toLocaleDateString()})} />}
       {currentScreen === AppScreen.PROFILE && <EditProfile onNavigate={navigate} myProfile={myProfile} updateProfile={updateProfile} completion={calculateCompletion()} />}
       
       {currentScreen === AppScreen.TERMS && <Terms onNavigate={navigate} />}
@@ -169,9 +229,9 @@ const App: React.FC = () => {
       {currentScreen === AppScreen.NOTIFICATIONS && <Notifications onNavigate={navigate} />}
 
       {/* Reporting System */}
-      {currentScreen === AppScreen.REPORT && <Report onNavigate={navigate} initialContext={reportContext} addReport={addReport} />}
-      {currentScreen === AppScreen.REPORT_LIST && <ReportList onNavigate={navigate} reports={reports} onSelectReport={handleSelectReport} />}
-      {currentScreen === AppScreen.REPORT_DETAIL && <ReportDetail onNavigate={navigate} report={reports.find(r => r.id === selectedReportId) || null} />}
+      {currentScreen === AppScreen.REPORT && <Report onNavigate={navigate} initialContext={reportContext} />}
+      {currentScreen === AppScreen.REPORT_LIST && <ReportList onNavigate={navigate} onSelectReport={handleSelectReport} />}
+      {currentScreen === AppScreen.REPORT_DETAIL && <ReportDetail onNavigate={navigate} reportId={selectedReportId} />}
 
       {showBottomNav && <BottomNav currentScreen={currentScreen} onNavigate={navigate} />}
     </div>

@@ -1,3 +1,45 @@
+## Stripe (Billing)
+
+Bloco de env para produção (`thegame-backend.env`):
+
+```dotenv
+FRONTEND_BASE_URL=https://app.thegamebrasil.com.br
+STRIPE_SECRET_KEY=sk_live_xxx
+STRIPE_WEBHOOK_SECRET=whsec_xxx
+STRIPE_PRICE_MONTHLY=price_xxx
+STRIPE_PRICE_SEMIANNUAL=price_xxx
+STRIPE_PRICE_ANNUAL=price_xxx
+```
+
+Rota de webhook para cadastrar na Stripe:
+
+- `https://<SEU_BACKEND_PUBLICO>/v1/billing/webhook`
+
+Passo a passo de configuração:
+
+1. **`STRIPE_SECRET_KEY`**
+	- Stripe Dashboard → Developers → API keys.
+	- Use a chave `Secret key` do modo **Live** (`sk_live_...`).
+2. **`STRIPE_PRICE_MONTHLY` / `STRIPE_PRICE_SEMIANNUAL` / `STRIPE_PRICE_ANNUAL`**
+	- Stripe Dashboard → Product catalog → Product/Prices.
+	- Copie o `Price ID` (`price_...`) de cada plano usado no app.
+3. **`STRIPE_WEBHOOK_SECRET`**
+	- Stripe Dashboard → Developers → Webhooks → Add endpoint.
+	- Endpoint: `https://<SEU_BACKEND_PUBLICO>/v1/billing/webhook`.
+	- Eventos mínimos: `checkout.session.completed`, `invoice.payment_succeeded`, `invoice.payment_failed`.
+	- Após criar, copie o `Signing secret` (`whsec_...`).
+4. **`FRONTEND_BASE_URL`**
+	- URL pública do frontend para `success_url` e `cancel_url` do Checkout.
+	- Exemplo: `https://app.thegamebrasil.com.br`.
+
+Endpoints implementados:
+
+- `POST /v1/billing/checkout`
+- `GET /v1/billing/subscription`
+- `GET /v1/billing/payments`
+- `POST /v1/billing/cancel`
+- `POST /v1/billing/webhook`
+
 # thegame-backend
 
 ## Dev

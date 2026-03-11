@@ -1,5 +1,8 @@
 # The Game — Milestones (Backend, DB, Mobile e Publicação)
 
+> Status operacional consolidado em arquivo único: `thegame.todo`.
+> Este documento permanece como referência de arquitetura, escopo e roadmap.
+
 Este documento transforma o que o frontend já pressupõe (telas/fluxos atuais) em entregas de backend + base de dados, com boas práticas, desempenho e um caminho até publicação em Android/iOS.
 
 ## 1) Escopo funcional (derivado do frontend)
@@ -176,6 +179,11 @@ Geo (decidido):
 - [x] Cache-busting de logos com `__APP_BUILD_ID__`
 - [x] Correção do erro `/index.css` (remoção do link no HTML + fallback `public/index.css`)
 - [x] Correção do editor/crop de foto em `screens/EditProfile.tsx` e centralização de modais (sem blur no overlay do EditProfile)
+- [x] Ranking persistido (`GET /v1/ranking`) integrado ao frontend
+- [x] Denúncias persistidas (`POST/GET /v1/reports` e `GET /v1/reports/:id`)
+- [x] Notificações com marcação de lida (`POST /v1/notifications/:id/seen`)
+- [x] Chat realtime com WebSocket (`/v1/chats/:matchId/ws`) + fallback HTTP no frontend
+- [x] Endpoint de exclusão de conta (`POST /v1/auth/delete-account`) com validação de senha
 
 ### M0 — Fundação (1 semana)
 - [x] Criar repositório do backend + CI básico (lint/test/build)
@@ -184,6 +192,7 @@ Geo (decidido):
 
 Smoketests (M0)
 - [x] `GET /health` retorna 200
+- [x] Health do serviço real retorna `{"ok":true,"db":"ok"}`
 - [ ] Migrações sobem do zero em ambiente limpo
 
 ### M1 — Auth & Conta (1–2 semanas)
@@ -192,19 +201,21 @@ Smoketests (M0)
 - [x] Forgot/reset/change password
 
 Smoketests (M1)
-- [ ] Registrar e logar com email/senha
-- [ ] Fluxo `forgot-password` gera token e `reset-password` troca senha
+- [x] Registrar e logar com email/senha
+- [x] Fluxo `forgot-password` gera token e `reset-password` troca senha
 - [ ] Login OAuth cria usuário e inicia sessão
 
 ### M2 — Perfil & Fotos (1–2 semanas)
-- [ ] `GET/PATCH /v1/me` + `profile_details`
+- [x] `GET/PUT /v1/profile` (equivalente ao `GET/PATCH /v1/me` no MVP atual)
+- [ ] `profile_details` completo (campos avançados + endpoint dedicado)
 - [ ] `PUT /v1/me/location` (lat/lng) + grava `profiles.location`
 - [ ] Preferências: idade/distância/lookingFor + interests (max 3) + vibe
-- [ ] Upload/reorder/delete de fotos (S3 + URLs assinadas)
+- [x] Upload/reorder/delete de fotos (GCS + URLs assinadas)
 
 Smoketests (M2)
-- [ ] Atualizar perfil e recuperar via `GET /v1/me`
-- [ ] Enviar foto e receber URL servível (CDN/storage)
+- [x] Atualizar perfil e recuperar via `GET /v1/profile`
+- [x] Enviar foto e receber URL servível (storage)
+- [x] `POST /v1/profile/photos/upload-url` retorna `200` em serviço real
 - [ ] Atualizar localização e validar que `location_updated_at` muda
 
 ### M3 — Descoberta & Swipes (1–2 semanas)
@@ -223,42 +234,47 @@ Smoketests (M3)
 - [x] Envio de mensagens (HTTP) + WebSocket (tempo real)
 
 Smoketests (M4)
-- [ ] Criar conversa a partir de match e enviar mensagem
-- [ ] WebSocket entrega `message.new` para o outro usuário
+- [x] Criar conversa a partir de match e enviar mensagem
+- [x] WebSocket entrega `message.new` para o outro usuário
 
 ### M5 — Notificações (1 semana)
 - [ ] Gerar notificações (match, message, system)
-- [ ] Marcar como visto
+- [x] Marcar como visto
 
 Smoketests (M5)
 - [ ] Mensagem nova gera notificação para o destinatário
-- [ ] `POST /v1/notifications/:id/seen` marca `seen_at`
+- [x] `POST /v1/notifications/:id/seen` marca `seen_at`
 
 ### M6 — Denúncias & Moderação (1 semana)
-- [ ] Criar/listar/detalhar tickets
-- [ ] Fluxo mínimo de updates do suporte
+- [x] Criar/listar/detalhar tickets
+- [x] Fluxo mínimo de updates do suporte
 - [ ] Controles mínimos: status de usuário (ativo/suspenso/banido) e trilha de auditoria mínima
 
 Smoketests (M6)
-- [ ] `POST /v1/reports` cria ticket e aparece em `GET /v1/reports`
-- [ ] `GET /v1/reports/:id` retorna updates
+- [x] `POST /v1/reports` cria ticket e aparece em `GET /v1/reports`
+- [x] `GET /v1/reports/:id` retorna updates
 
 ### M7 — Premium & Pagamentos (2–3 semanas)
-- [ ] Integração Stripe (Checkout/PaymentIntent) + webhooks
-- [ ] Subscrição e histórico de pagamentos
-- [ ] Sincronização de status Premium no backend (source of truth)
+- [x] Integração Stripe no backend (`checkout`, `subscription`, `payments`, `cancel`, `webhook`)
+- [x] Validação de assinatura do webhook Stripe
+- [x] Subscrição e histórico de pagamentos no backend
+- [x] Sincronização de status Premium no backend (source of truth)
+- [ ] Configuração live de env + `price_...` + `whsec_...`
+- [ ] Endpoint público HTTPS para webhook Stripe
+- [ ] Smoke test real de checkout/webhook em produção
 - [ ] Fluxo Stripe no mobile (ex: compra via web + app lê status do backend)
 
 Smoketests (M7)
-- [ ] Webhook Stripe atualiza `subscriptions.status`
+- [ ] `POST /v1/billing/webhook` com assinatura válida atualiza `subscriptions.status`
 - [ ] `GET /v1/billing/subscription` reflete o estado após pagamento
+- [ ] `GET /v1/billing/payments` retorna histórico real após cobrança
 
 ### M8 — Ranking (1 semana)
-- [ ] Ranking por cidade/UF
+- [x] Ranking por cidade/UF
 - [ ] (Opcional) `ranking/nearby` por raio com PostGIS
 
 Smoketests (M8)
-- [ ] `GET /v1/ranking` retorna lista ordenada
+- [x] `GET /v1/ranking` retorna lista ordenada
 - [ ] `GET /v1/ranking/nearby` respeita raio
 
 ### M9 — Preparação Mobile & Publicação (2–4 semanas)
@@ -278,9 +294,62 @@ Checklist de publicação
 - [ ] Política de Privacidade + Termos (já existem telas; publicar URLs)
 - [ ] Identificadores, ícones, screenshots e faixa etária
 - [ ] Para Premium: fluxo escolhido **Stripe** (validar impacto de políticas de assinatura no iOS/Android)
+- [ ] Página pública de suporte e página pública de exclusão de conta (com URL estável)
+- [ ] Google Play: preencher formulário Data safety com coleta/uso/compartilhamento de dados
+- [ ] App Store: preencher Privacy Nutrition Labels e permissões sensíveis usadas pelo app
+- [ ] Se houver login Google/Facebook no iOS: validar obrigatoriedade de Sign in with Apple
+- [ ] Se houver assinatura premium no app: revisar política de IAP (Apple/Google) antes da submissão
+- [ ] Preparar evidências para revisão (vídeo curto/conta de teste/fluxos de login e exclusão)
 
 ## 8) Decisões finais (fechadas)
 
 1) Geo: lat/lng + PostGIS
 2) Mobile: React Native
 3) Pagamentos: Stripe
+
+## 9) Backlog unificado (fonte de verdade)
+
+Esta seção substitui e unifica os itens do `thegame.todo`.
+
+### Concluído
+- Auth email/senha + refresh rotativo + forgot/reset/change password
+- Confirmação de email + templates transacionais de boas-vindas/reset com SMTP real
+- CRUD de perfil/opções + validações + cache ETag de opções
+- Upload de fotos com signed URL GCS + metadados + cleanup
+- Feed/likes/chats/notifications integrados em API real
+- Ranking persistido + integração frontend
+- Denúncias persistidas (create/list/detail)
+- WebSocket realtime de chat (com fallback HTTP no frontend)
+- Marcação de notificação como lida
+- Exclusão de conta por endpoint autenticado
+
+### Pendente (prioridade)
+1. **P0 — Configuração Stripe em produção**
+  - preencher secret key, price ids e webhook secret no env
+2. **P0 — OAuth social (Google/Facebook)**
+  - endpoints backend + integração frontend (PKCE)
+3. **P0 — Publicação/compliance**
+  - páginas públicas de suporte/exclusão + ajustes finais de política loja
+4. **P1 — Notificações de domínio**
+  - gerar automaticamente em eventos de match/message/system
+5. **P1 — Segurança e operação**
+  - rate limit, auditoria, backups, alertas, rollback
+
+### Próxima execução recomendada
+- Concluir **configuração Stripe em produção** para liberar checkout real imediatamente.
+
+## 10) Próximos passos executáveis (ordem atual)
+
+1. **Stripe live — liberar billing real**
+  - Preencher `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_SEMIANNUAL`, `STRIPE_PRICE_ANNUAL`, `FRONTEND_BASE_URL`.
+  - Expor backend em HTTPS e cadastrar webhook Stripe.
+  - Executar smoke end-to-end de checkout + webhook + leitura de assinatura.
+2. **OAuth social**
+  - Implementar `POST /v1/auth/oauth/google` e `POST /v1/auth/oauth/facebook`.
+  - Integrar fluxo no frontend e validar criação/vinculação de sessão.
+3. **Publicação/compliance**
+  - Publicar páginas estáveis de suporte, privacidade, termos e exclusão de conta.
+  - Fechar formulários de privacidade das lojas.
+4. **Hardening operacional**
+  - [x] Rate limit em auth, swipes e envio de mensagens + auditoria mínima de ações sensíveis.
+  - [ ] Rotina de backup, alertas e rollback.

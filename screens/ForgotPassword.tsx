@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { AppScreen } from '../types';
 import { Button } from '../components/Button';
 import { ArrowLeft, Mail, CheckCircle2 } from 'lucide-react';
+import { apiFetch } from '../apiClient';
 
 interface ForgotPasswordProps {
   onNavigate: (screen: AppScreen) => void;
@@ -11,14 +12,30 @@ interface ForgotPasswordProps {
 export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onNavigate }) => {
   const [email, setEmail] = useState('');
   const [isSent, setIsSent] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
-      // Simulate API call
-      setTimeout(() => {
-        setIsSent(true);
-      }, 1000);
+    if (!email || isSubmitting) return;
+
+    setError('');
+    setIsSubmitting(true);
+    try {
+      const res = await apiFetch('/v1/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      if (!res.ok) {
+        setError('Não foi possível enviar o email agora.');
+        return;
+      }
+
+      setIsSent(true);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -64,8 +81,10 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onNavigate }) =>
                 </div>
             </div>
 
-            <Button fullWidth type="submit" className="mt-8" disabled={!email}>
-                Enviar Link
+            {error && <p className="text-sm text-red-400">{error}</p>}
+
+            <Button fullWidth type="submit" className="mt-8" disabled={!email || isSubmitting}>
+              {isSubmitting ? 'Enviando...' : 'Enviar Link'}
             </Button>
         </form>
       )}

@@ -5,6 +5,7 @@ import { LOCATIONS } from '../constants';
 import { ArrowLeft, Check, X, MapPin, Zap, ChevronDown, Lock, CreditCard, Calendar, User, Receipt, History } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
+import { apiFetch } from '../apiClient';
 
 interface PremiumProps {
   onNavigate: (screen: AppScreen) => void;
@@ -14,6 +15,10 @@ interface PremiumProps {
 
 export const Premium: React.FC<PremiumProps> = ({ onNavigate, isPremium, setPremium }) => {
   const [hideAge, setHideAge] = useState(false);
+    const [isLoadingSubscription, setIsLoadingSubscription] = useState(true);
+    const [isStartingCheckout, setIsStartingCheckout] = useState(false);
+    const [billingError, setBillingError] = useState<string | null>(null);
+    const [subscriptionInfo, setSubscriptionInfo] = useState<{ renewsAt?: string | null; cancelAtPeriodEnd?: boolean } | null>(null);
   
   // Location State
   const [location, setLocation] = useState({ city: 'Rio de Janeiro', state: 'RJ' });
@@ -39,14 +44,68 @@ export const Premium: React.FC<PremiumProps> = ({ onNavigate, isPremium, setPrem
     setIsModalOpen(false);
   };
 
-  const handlePurchase = (e: React.FormEvent) => {
+    const handlePurchase = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate API call
-    setTimeout(() => {
-        setPremium(true);
-        setIsCheckoutOpen(false);
-    }, 1500);
+        setIsStartingCheckout(true);
+        setBillingError(null);
+        try {
+            const res = await apiFetch('/v1/billing/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ plan: selectedPlan, recurring: isRecurring })
+            });
+            if (!res.ok) {
+                const payload = (await res.json().catch(() => null)) as { error?: string } | null;
+                if (payload?.error === 'stripe_not_configured' || payload?.error === 'stripe_price_not_configured') {
+                    setBillingError('Pagamento indisponível no momento. Configuração Stripe pendente.');
+                } else {
+                    setBillingError('Não foi possível iniciar o checkout agora.');
+                }
+                return;
+            }
+
+            const data = (await res.json()) as { url?: string };
+            if (!data.url) {
+                setBillingError('Checkout sem URL de redirecionamento.');
+                return;
+            }
+            window.location.href = data.url;
+        } catch {
+            setBillingError('Não foi possível iniciar o checkout agora.');
+        } finally {
+            setIsStartingCheckout(false);
+        }
   };
+
+    const loadSubscription = React.useCallback(async () => {
+        setIsLoadingSubscription(true);
+        try {
+            const res = await apiFetch('/v1/billing/subscription');
+            if (!res.ok) return;
+            const data = (await res.json()) as {
+                isPremium?: boolean;
+                subscription?: { renewsAt?: string | null; cancelAtPeriodEnd?: boolean } | null;
+            };
+            setPremium(Boolean(data.isPremium));
+            setSubscriptionInfo(data.subscription ?? null);
+        } finally {
+            setIsLoadingSubscription(false);
+        }
+    }, [setPremium]);
+
+    const handleCancelSubscription = async () => {
+        setBillingError(null);
+        const res = await apiFetch('/v1/billing/cancel', { method: 'POST' });
+        if (!res.ok) {
+            setBillingError('Não foi possível cancelar a assinatura agora.');
+            return;
+        }
+        await loadSubscription();
+    };
+
+    React.useEffect(() => {
+        loadSubscription();
+    }, [loadSubscription]);
 
   const features = [
     { label: 'Curtidas diárias Ilimitadas', active: isPremium },
@@ -87,9 +146,13 @@ export const Premium: React.FC<PremiumProps> = ({ onNavigate, isPremium, setPrem
                 {isPremium ? (
                     <div className="mt-4">
                         <span className="inline-block bg-white text-brand-primary font-bold px-3 py-1 rounded-full text-xs uppercase mb-2">Plano Ativo</span>
-                        <p className="text-white/90 text-sm">Seu plano renova em 30/12/2025</p>
-                        <button onClick={() => setPremium(false)} className="mt-4 text-xs text-white/70 hover:text-white underline">
-                            Cancelar assinatura (Demo)
+                        <p className="text-white/90 text-sm">
+                          {subscriptionInfo?.renewsAt
+                            ? `Seu plano renova em ${new Date(subscriptionInfo.renewsAt).toLocaleDateString('pt-BR')}`
+                            : 'Sua assinatura está ativa.'}
+                        </p>
+                        <button onClick={handleCancelSubscription} className="mt-4 text-xs text-white/70 hover:text-white underline">
+                            Cancelar assinatura
                         </button>
                     </div>
                 ) : (
@@ -98,13 +161,19 @@ export const Premium: React.FC<PremiumProps> = ({ onNavigate, isPremium, setPrem
                          <button 
                             onClick={() => setIsCheckoutOpen(true)}
                             className="w-full py-3 bg-white text-brand-accent font-bold rounded-full shadow-lg hover:bg-gray-100 transition-colors"
+                                                        disabled={isLoadingSubscription}
                         >
-                            Contratar Agora
+                                                        {isLoadingSubscription ? 'Carregando...' : 'Contratar Agora'}
                          </button>
                     </div>
                 )}
              </div>
         </div>
+                {billingError && (
+                    <div className="bg-red-500/10 border border-red-500/30 text-red-200 text-xs rounded-xl p-3">
+                        {billingError}
+                    </div>
+                )}
 
         {/* Location Settings */}
         <div className={`bg-brand-card rounded-xl p-4 border border-white/5 transition-opacity duration-300 ${!isPremium ? 'opacity-70' : ''}`}>
@@ -375,7 +444,7 @@ export const Premium: React.FC<PremiumProps> = ({ onNavigate, isPremium, setPrem
                             <span className="text-xl font-black text-white">R$ {plans[selectedPlan].price}</span>
                         </div>
                         <Button fullWidth type="submit" className="shadow-lg shadow-brand-primary/40">
-                            Finalizar Pagamento
+                            {isStartingCheckout ? 'Iniciando checkout...' : 'Finalizar Pagamento'}
                         </Button>
                         <p className="text-[10px] text-gray-600 text-center mt-3">
                             Pagamento processado de forma segura via Stripe. Ao confirmar, você concorda com os Termos de Serviço.
