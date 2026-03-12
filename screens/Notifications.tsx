@@ -59,6 +59,22 @@ export const Notifications: React.FC<NotificationsProps> = ({ onNavigate }) => {
     }
   };
 
+  const resolveScreen = (value?: string) => {
+    if (!value) return null;
+    return Object.values(AppScreen).includes(value as AppScreen) ? (value as AppScreen) : null;
+  };
+
+  const handleNotificationOpen = async (notification: NotificationItem) => {
+    if (!notification.seen) {
+      await markAsSeen(notification.id);
+    }
+
+    const targetScreen = resolveScreen(notification.payload?.screen);
+    if (targetScreen) {
+      onNavigate(targetScreen);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col bg-brand-dark text-white pt-12 pb-8">
       <header className="px-4 mb-8 flex items-center gap-4">
@@ -115,7 +131,7 @@ export const Notifications: React.FC<NotificationsProps> = ({ onNavigate }) => {
               key={notification.id}
               type="button"
               onClick={() => {
-                if (!notification.seen) void markAsSeen(notification.id);
+                void handleNotificationOpen(notification);
               }}
               disabled={markingId === notification.id}
               className={`rounded-3xl border border-white/5 p-4 bg-gradient-to-r ${style.accent} flex gap-4 hover:border-white/20 transition-colors`}
@@ -131,7 +147,14 @@ export const Notifications: React.FC<NotificationsProps> = ({ onNavigate }) => {
                   )}
                 </div>
                 <p className="text-sm text-gray-300 leading-snug">{notification.description}</p>
-                <p className="text-xs text-gray-500 mt-2">{notification.timestamp}</p>
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <p className="text-xs text-gray-500">{notification.timestamp}</p>
+                  {notification.payload?.actionLabel ? (
+                    <span className="text-[10px] uppercase tracking-widest text-brand-primary font-bold">
+                      {notification.payload.actionLabel}
+                    </span>
+                  ) : null}
+                </div>
               </div>
             </button>
           );

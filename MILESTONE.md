@@ -241,11 +241,14 @@ Smoketests (M4)
 ### M5 — Notificações (1 semana)
 - [x] Gerar notificações automáticas de match e message
 - [x] Gerar notificações automáticas de system
+- [x] Enriquecer notificações com payloads acionáveis de UX
+- [x] Adicionar eventos automáticos para superlike, senha e billing
 - [x] Marcar como visto
 
 Smoketests (M5)
 - [x] Mensagem nova gera notificação para o destinatário
 - [x] Match novo gera notificação para os envolvidos
+- [x] Superlike, redefinição/alteração de senha e denúncia expõem payloads acionáveis
 - [x] `POST /v1/notifications/:id/seen` marca `seen_at`
 
 ### M6 — Denúncias & Moderação (1 semana)
@@ -327,20 +330,18 @@ Esta seção substitui e unifica os itens do `thegame.todo`.
 - Marcação de notificação como lida
 - Exclusão de conta por endpoint autenticado
 - Rate limit em auth/swipes/chat + auditoria mínima persistida
+- Persistência principal de discovery/settings no backend e frontend (`/v1/settings`, `profile_preferences`, `Settings`, `EditProfile`)
+- Localização manual de descoberta, campos avançados do perfil e preferências sensíveis persistidos com cobertura automatizada
+- Enforcement das preferências sensíveis em fluxos reais: feed e ranking respeitam `profileVisible`, feed respeita `hideAge` e chat expõe política de `readReceiptsEnabled`
+- Notificações refinadas com payloads acionáveis e novos eventos para superlike, segurança (senha) e billing
 
 ### Pendente (prioridade para modo de testes completo)
 1. **P0 — OAuth social (Google/Facebook)**
   - implementar endpoints backend e integrar fluxo no frontend
 2. **P0 — Cobertura de testes dos fluxos core já entregues**
   - fechar gaps restantes de GCS real e billing real com webhook assinado
-3. **P1 — Persistência de preferências e perfil avançado**
-  - Security/Settings, preferências principais, localização e campos avançados do perfil
-4. **P1 — Persistência de preferências e perfil avançado**
-  - Security/Settings, preferências principais, localização e campos avançados do perfil
 5. **P1 — Stripe real para teste end-to-end**
   - configurar env/webhook HTTPS para checkout e assinatura reais em staging/produção
-6. **P1 — Completar notificações de domínio**
-  - refinar payloads/títulos conforme UX e adicionar novos eventos quando surgirem
 7. **P2 — Publicação/compliance**
   - páginas públicas estáveis e formulários das lojas
 8. **P2 — Operação contínua**
@@ -357,17 +358,13 @@ Esta seção substitui e unifica os itens do `thegame.todo`.
 2. **Testes automatizados dos fluxos já entregues**
   - Fechar cobertura de GCS real e billing real com assinatura Stripe.
   - Consolidar smoke de banco real para os módulos principais.
-3. **Persistência de preferências e perfil avançado**
-  - Entregar `Security/Settings`, localização e campos avançados do perfil já refletidos no frontend.
-4. **Stripe real — liberar billing end-to-end**
+3. **Stripe real — liberar billing end-to-end**
   - Preencher `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_SEMIANNUAL`, `STRIPE_PRICE_ANNUAL`, `FRONTEND_BASE_URL`.
   - Expor backend em HTTPS e cadastrar webhook Stripe.
   - Executar smoke end-to-end de checkout + webhook + leitura de assinatura.
-5. **Notificações de domínio restantes**
-  - Refinar UX das notificações automáticas e adicionar novos eventos quando necessário.
-6. **Publicação/compliance**
+4. **Publicação/compliance**
   - Publicar páginas estáveis de suporte, privacidade, termos e exclusão de conta.
   - Fechar formulários de privacidade das lojas.
-7. **Hardening operacional**
+6. **Hardening operacional**
   - [x] Rate limit em auth, swipes e envio de mensagens + auditoria mínima de ações sensíveis.
   - [ ] Rotina de backup, alertas e rollback.

@@ -12,7 +12,7 @@ Objetivo:
 ### Já existe teste automatizado
 - `backend/test/health.test.ts` — cobre `GET /health`, `x-request-id` e `db=ok` quando executado com `SMOKE_DB=1`
 - `backend/test/auth.m1.test.ts` *(condicional com `SMOKE_DB=1`)* — cobre register/login/refresh/logout/forgot/reset/change-password/delete-account
-- `backend/test/core.m2-m7.test.ts` *(condicional com `SMOKE_DB=1`)* — cobre perfil/fotos, feed/swipes/likes, ranking, match/chat/notificações, WebSocket, denúncias e billing em cenários configurados/não configurados
+- `backend/test/core.m2-m7.test.ts` *(condicional com `SMOKE_DB=1`)* — cobre perfil/fotos, settings avançados, feed/swipes/likes, ranking com perfis invisíveis, match/chat/notificações, política de recibo de leitura, WebSocket, denúncias e billing em cenários configurados/não configurados
 
 ### Ainda precisa de cobertura automatizada
 - Fotos / GCS com storage real
@@ -25,9 +25,7 @@ Objetivo:
    - Fechar os gaps restantes: GCS real e billing Stripe real com webhook assinado
 2. **P0 — Habilitar os fluxos ainda bloqueados na UI**
    - OAuth Google/Facebook
-3. **P1 — Fechar lacunas funcionais visíveis em teste manual**
-   - localização, preferências principais e `Security/Settings`
-4. **P1 — Validar billing real em ambiente com Stripe configurado**
+3. **P1 — Validar billing real em ambiente com Stripe configurado**
    - checkout, webhook e leitura de assinatura/histórico
 
 ## 2) Ambientes de teste

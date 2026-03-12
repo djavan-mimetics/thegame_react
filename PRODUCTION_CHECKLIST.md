@@ -9,11 +9,14 @@
 - ✅ Feed/likes/chat/notifications com persistência em banco
 - ✅ Notificações automáticas de domínio para match e message
 - ✅ Notificações automáticas do tipo system (boas-vindas, email confirmado e denúncia recebida)
+- ✅ Notificações refinadas com payloads acionáveis e navegação por contexto
+- ✅ Novos eventos automáticos para superlike, alteração/redefinição de senha e billing (sucesso/falha/cancelamento)
 - ✅ Upload de fotos com signed URL GCS (`/v1/profile/photos/upload-url`) em ambiente de deploy
 - ✅ Ranking via backend (`/v1/ranking`) integrado no frontend
 - ✅ Denúncias persistidas via backend (`POST /v1/reports`, `GET /v1/reports`, `GET /v1/reports/:id`)
 - ✅ Exclusão de conta autenticada
 - ✅ Rate limit em auth/swipes/chat + auditoria mínima persistida
+- ✅ Enforcement de preferências sensíveis: perfis invisíveis saem do feed/ranking, idade oculta não aparece no feed e chat respeita política de recibo de leitura
 
 ## 2) Seeds aplicados
 
@@ -47,10 +50,15 @@ Status atual no banco:
 - ReportList
 - ReportDetail
 
+### Regras sensíveis já aplicadas em runtime
+- Feed respeita invisibilidade de perfil e ocultação de idade
+- Ranking exclui perfis com descoberta desativada
+- Chat expõe e respeita política de recibo de leitura da outra pessoa
+
 ### Dependem de backend para operar plenamente
 - Premium: billing Stripe implementado; falta configurar chaves/preços no env para checkout real
 - PaymentHistory: integrado ao endpoint real (`GET /v1/billing/payments`)
-- Security / Settings: falta persistência de preferências sensíveis e políticas de conta
+- Security / Settings: discovery, localização manual, campos avançados e preferências sensíveis já persistem; faltam apenas políticas de conta mais profundas, se desejadas
 
 ### Telas essencialmente estáticas (ok para fase atual)
 - Welcome, Terms, Privacy, About, Help, Rules
@@ -63,10 +71,6 @@ Status atual no banco:
    - `POST /v1/auth/oauth/facebook`
 2. Cobertura de testes dos módulos já entregues
    - fechar gaps de GCS real e billing real com webhook assinado
-3. Persistência de preferências do app
-   - `Security / Settings`, localização e preferências principais do frontend
-4. Completar notificações de domínio
-   - refinamentos de UX/payload e novos eventos quando necessário
 
 ### Média prioridade
 5. Stripe real em ambiente de teste

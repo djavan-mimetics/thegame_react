@@ -6,6 +6,7 @@ export async function registerNotificationsRoutes(app: FastifyInstance, _config:
     const userId = req.user!.userId;
     const res = await app.db.pool.query(
       `SELECT id, type, title, description, created_at, seen
+              , payload
        FROM notifications
        WHERE user_id = $1
        ORDER BY created_at DESC
@@ -20,7 +21,8 @@ export async function registerNotificationsRoutes(app: FastifyInstance, _config:
         title: row.title ?? 'Atualizacao',
         description: row.description ?? '',
         timestamp: row.created_at ? new Date(row.created_at).toLocaleString('pt-BR') : '',
-        seen: row.seen ?? false
+        seen: row.seen ?? false,
+        payload: typeof row.payload === 'object' && row.payload !== null ? row.payload : {}
       }))
     };
   });

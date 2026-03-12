@@ -382,6 +382,11 @@ export async function registerAuthRoutes(app: FastifyInstance, config: AppConfig
       userId: consumed.user_id,
       targetUserId: consumed.user_id
     });
+    try {
+      await app.notifications.notifyPasswordChanged({ userId: consumed.user_id, source: 'reset' });
+    } catch (error) {
+      req.log.error({ err: error, userId: consumed.user_id }, 'system_notification_failed');
+    }
     return reply.send({ ok: true });
   });
 
@@ -407,6 +412,11 @@ export async function registerAuthRoutes(app: FastifyInstance, config: AppConfig
       userId,
       targetUserId: userId
     });
+    try {
+      await app.notifications.notifyPasswordChanged({ userId, source: 'change' });
+    } catch (error) {
+      req.log.error({ err: error, userId }, 'system_notification_failed');
+    }
     return reply.send({ ok: true });
   });
 

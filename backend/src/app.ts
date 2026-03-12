@@ -12,6 +12,7 @@ import { getConfig, registerConfig } from './config.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerOptionsRoutes } from './routes/options.js';
 import { registerProfileRoutes } from './routes/profile.js';
+import { registerSettingsRoutes } from './routes/settings.js';
 import { registerFeedRoutes } from './routes/feed.js';
 import { registerChatRoutes } from './routes/chats.js';
 import { registerNotificationsRoutes } from './routes/notifications.js';
@@ -73,6 +74,7 @@ export async function buildApp() {
   await registerAuthRoutes(app, config);
   await registerOptionsRoutes(app, config);
   await registerProfileRoutes(app, config);
+  await registerSettingsRoutes(app, config);
   await registerPhotosRoutes(app, config);
   await registerFeedRoutes(app, config);
   await registerChatRoutes(app, config);

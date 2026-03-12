@@ -88,6 +88,24 @@ export async function registerChatRoutes(app: FastifyInstance, _config: AppConfi
     return saved;
   };
 
+  const getMatchChatPreferences = async (matchId: string, viewerId: string) => {
+    const res = await app.db.pool.query(
+      `SELECT CASE WHEN m.user_a = $2 THEN m.user_b ELSE m.user_a END AS other_user_id,
+              COALESCE(pp.read_receipts_enabled, true) AS other_read_receipts_enabled
+       FROM matches m
+       LEFT JOIN profile_preferences pp ON pp.user_id = CASE WHEN m.user_a = $2 THEN m.user_b ELSE m.user_a END
+       WHERE m.id = $1 AND ($2 = m.user_a OR $2 = m.user_b)
+       LIMIT 1`,
+      [matchId, viewerId]
+    );
+
+    const row = res.rows[0] as { other_user_id?: string; other_read_receipts_enabled?: boolean } | undefined;
+    return {
+      otherUserId: row?.other_user_id ?? null,
+      readReceiptsEnabled: row?.other_read_receipts_enabled ?? true
+    };
+  };
+
   app.get('/v1/chats/:matchId/ws', { websocket: true }, async (connection, req) => {
     const matchId = (req.params as { matchId: string }).matchId;
     const userId = await getWsUserId(req.raw.url);
@@ -124,6 +142,7 @@ export async function registerChatRoutes(app: FastifyInstance, _config: AppConfi
       if (!parsedBody.success) return;
 
       const saved = await persistMessage(matchId, userId, parsedBody.data.text);
+      const chatPreferences = await getMatchChatPreferences(matchId, userId);
 
       const sockets = rooms.get(matchId);
       if (!sockets || sockets.size === 0) return;
@@ -138,7 +157,8 @@ export async function registerChatRoutes(app: FastifyInstance, _config: AppConfi
               senderId: String(saved.sender_id ?? ''),
               text: String(saved.body ?? ''),
               timestamp: new Date(saved.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-              isMe: String(saved.sender_id ?? '') === targetUserId
+              isMe: String(saved.sender_id ?? '') === targetUserId,
+              readReceiptsEnabled: chatPreferences.readReceiptsEnabled
             }
           })
         );
@@ -163,10 +183,12 @@ export async function registerChatRoutes(app: FastifyInstance, _config: AppConfi
               (SELECT COALESCE(public_url, gcs_path) FROM profile_photos ph WHERE ph.user_id = p.user_id AND ph.deleted_at IS NULL ORDER BY ph.order_index, ph.created_at LIMIT 1) AS image,
               (SELECT body FROM messages WHERE match_id = mf.id ORDER BY created_at DESC LIMIT 1) AS last_message,
               (SELECT created_at FROM messages WHERE match_id = mf.id ORDER BY created_at DESC LIMIT 1) AS timestamp,
+              COALESCE(pp.read_receipts_enabled, true) AS read_receipts_enabled,
               ARRAY(SELECT tag.label FROM profile_tags pt JOIN tags tag ON tag.id = pt.tag_id WHERE pt.user_id = p.user_id ORDER BY tag.sort_order, tag.id) AS tags,
               ARRAY(SELECT COALESCE(public_url, gcs_path) FROM profile_photos ph WHERE ph.user_id = p.user_id AND ph.deleted_at IS NULL ORDER BY ph.order_index, ph.created_at) AS images
        FROM matches_for_user mf
        JOIN profiles p ON p.user_id = mf.other_id
+            LEFT JOIN profile_preferences pp ON pp.user_id = p.user_id
        ORDER BY timestamp DESC NULLS LAST, p.name`,
       [userId]
     );
@@ -180,6 +202,7 @@ export async function registerChatRoutes(app: FastifyInstance, _config: AppConfi
         lastMessage: row.last_message || 'Sem mensagens ainda',
         timestamp: row.timestamp ? new Date(row.timestamp).toLocaleString('pt-BR') : '',
         unread: 0,
+        readReceiptsEnabled: Boolean(row.read_receipts_enabled ?? true),
         tags: Array.isArray(row.tags) ? row.tags.filter(Boolean) : [],
         images: Array.isArray(row.images) ? row.images.filter(Boolean) : []
       }))
@@ -195,6 +218,8 @@ export async function registerChatRoutes(app: FastifyInstance, _config: AppConfi
       [matchId, userId]
     );
     if (match.rowCount === 0) return reply.code(403).send({ error: 'forbidden' });
+
+    const chatPreferences = await getMatchChatPreferences(matchId, userId);
 
     const res = await app.db.pool.query(
       `SELECT id, sender_id, body, created_at
@@ -212,7 +237,11 @@ export async function registerChatRoutes(app: FastifyInstance, _config: AppConfi
         text: row.body,
         timestamp: new Date(row.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
         isMe: row.sender_id === userId
-      }))
+      })),
+      policy: {
+        otherUserId: chatPreferences.otherUserId,
+        readReceiptsEnabled: chatPreferences.readReceiptsEnabled
+      }
     };
   });
 
@@ -232,13 +261,15 @@ export async function registerChatRoutes(app: FastifyInstance, _config: AppConfi
     if (match.rowCount === 0) return reply.code(403).send({ error: 'forbidden' });
 
     const saved = await persistMessage(matchId, userId, body.text);
+    const chatPreferences = await getMatchChatPreferences(matchId, userId);
 
     return reply.send({
       id: saved.id,
       senderId: userId,
       text: body.text,
       timestamp: new Date(saved.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-      isMe: true
+      isMe: true,
+      readReceiptsEnabled: chatPreferences.readReceiptsEnabled
     });
   });
 }

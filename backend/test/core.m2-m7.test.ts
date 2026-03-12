@@ -36,8 +36,86 @@ describe.sequential('M2-M7 core smoketests', () => {
   it.skipIf(!isDbSmoke)('M2 profile update validates options and photo lifecycle', async () => {
     const user = await registerUser(app, 'm2-profile');
     createdUserIds.push(user.userId);
-
     const { payload } = await upsertProfile(app, user.accessToken, 'M2');
+
+    const defaultSettings = await app.inject({
+      method: 'GET',
+      url: '/v1/settings',
+      headers: authHeaders(user.accessToken)
+    });
+    expect(defaultSettings.statusCode).toBe(200);
+    expect(defaultSettings.json().settings).toMatchObject({
+      minAge: 18,
+      maxAge: 94,
+      maxDistanceKm: 35,
+      expandDistance: true,
+      expandAge: false,
+      internationalMode: false,
+      discoveryState: null,
+      discoveryCity: null,
+      profileVisible: true,
+      hideAge: false,
+      readReceiptsEnabled: true,
+      allowMarketingEmails: false
+    });
+
+    const persistedSettings = await app.inject({
+      method: 'PUT',
+      url: '/v1/settings',
+      headers: authHeaders(user.accessToken),
+      payload: {
+        minAge: 24,
+        maxAge: 38,
+        maxDistanceKm: 120,
+        expandDistance: false,
+        expandAge: true,
+        internationalMode: true,
+        discoveryState: payload.state,
+        discoveryCity: payload.city,
+        profileVisible: false,
+        hideAge: true,
+        readReceiptsEnabled: false,
+        allowMarketingEmails: true
+      }
+    });
+    expect(persistedSettings.statusCode).toBe(200);
+    expect(persistedSettings.json().settings).toMatchObject({
+      minAge: 24,
+      maxAge: 38,
+      maxDistanceKm: 120,
+      expandDistance: false,
+      expandAge: true,
+      internationalMode: true,
+      discoveryState: payload.state,
+      discoveryCity: payload.city,
+      profileVisible: false,
+      hideAge: true,
+      readReceiptsEnabled: false,
+      allowMarketingEmails: true
+    });
+
+    const getInvalidSettings = await app.inject({
+      method: 'PUT',
+      url: '/v1/settings',
+      headers: authHeaders(user.accessToken),
+      payload: {
+        minAge: 24,
+        maxAge: 38,
+        maxDistanceKm: 120,
+        expandDistance: false,
+        expandAge: true,
+        internationalMode: true,
+        discoveryState: 'ZZ',
+        discoveryCity: 'Cidade Falsa',
+        profileVisible: false,
+        hideAge: true,
+        readReceiptsEnabled: false,
+        allowMarketingEmails: true
+      }
+    });
+    expect(getInvalidSettings.statusCode).toBe(400);
+    expect(getInvalidSettings.json().error).toBe('invalid_discovery_location');
+
     const getProfile = await app.inject({
       method: 'GET',
       url: '/v1/profile',
@@ -49,6 +127,17 @@ describe.sequential('M2-M7 core smoketests', () => {
     expect(profileJson.profile.name).toBe(payload.name);
     expect(profileJson.profile.current_tag).toBe(payload.currentTag);
     expect(profileJson.profile.tags).toEqual(payload.tags);
+    expect(profileJson.profile.relationship).toBe(payload.relationship);
+    expect(profileJson.profile.education).toBe(payload.education);
+    expect(profileJson.profile.family).toBe(payload.family);
+    expect(profileJson.profile.sign).toBe(payload.sign);
+    expect(profileJson.profile.pets).toBe(payload.pets);
+    expect(profileJson.profile.drink).toBe(payload.drink);
+    expect(profileJson.profile.smoke).toBe(payload.smoke);
+    expect(profileJson.profile.exercise).toBe(payload.exercise);
+    expect(profileJson.profile.food).toBe(payload.food);
+    expect(profileJson.profile.sleep).toBe(payload.sleep);
+    expect(profileJson.profile.personality).toEqual(payload.personality);
 
     const invalidProfile = await app.inject({
       method: 'PUT',
@@ -103,13 +192,58 @@ describe.sequential('M2-M7 core smoketests', () => {
   it.skipIf(!isDbSmoke)('M3-M6 feed, match, chat, notifications and reports flow works end-to-end', async () => {
     const userA = await registerUser(app, 'm3a');
     const userB = await registerUser(app, 'm3b');
+    const hiddenUser = await registerUser(app, 'm3hidden');
     const intruder = await registerUser(app, 'm3c');
-    createdUserIds.push(userA.userId, userB.userId, intruder.userId);
+    createdUserIds.push(userA.userId, userB.userId, hiddenUser.userId, intruder.userId);
 
     await upsertProfile(app, userA.accessToken, 'M3A');
-    await upsertProfile(app, userB.accessToken, 'M3B');
+    const { payload: payloadB } = await upsertProfile(app, userB.accessToken, 'M3B');
+    await upsertProfile(app, hiddenUser.accessToken, 'M3H');
     await completePhoto(app, userA.accessToken, 0, 'm3a');
     await completePhoto(app, userB.accessToken, 0, 'm3b');
+    await completePhoto(app, hiddenUser.accessToken, 0, 'm3h');
+
+    const hiddenSettings = await app.inject({
+      method: 'PUT',
+      url: '/v1/settings',
+      headers: authHeaders(hiddenUser.accessToken),
+      payload: {
+        minAge: 18,
+        maxAge: 94,
+        maxDistanceKm: 35,
+        expandDistance: true,
+        expandAge: false,
+        internationalMode: false,
+        discoveryState: null,
+        discoveryCity: null,
+        profileVisible: false,
+        hideAge: true,
+        readReceiptsEnabled: true,
+        allowMarketingEmails: false
+      }
+    });
+    expect(hiddenSettings.statusCode).toBe(200);
+
+    const userBSettings = await app.inject({
+      method: 'PUT',
+      url: '/v1/settings',
+      headers: authHeaders(userB.accessToken),
+      payload: {
+        minAge: 18,
+        maxAge: 94,
+        maxDistanceKm: 35,
+        expandDistance: true,
+        expandAge: false,
+        internationalMode: false,
+        discoveryState: payloadB.state,
+        discoveryCity: payloadB.city,
+        profileVisible: true,
+        hideAge: true,
+        readReceiptsEnabled: false,
+        allowMarketingEmails: false
+      }
+    });
+    expect(userBSettings.statusCode).toBe(200);
 
     const feed = await app.inject({
       method: 'GET',
@@ -118,6 +252,16 @@ describe.sequential('M2-M7 core smoketests', () => {
     });
     expect(feed.statusCode).toBe(200);
     expect(feed.json().profiles.some((profile: { id: string }) => profile.id === userB.userId)).toBe(true);
+    expect(feed.json().profiles.some((profile: { id: string }) => profile.id === hiddenUser.userId)).toBe(false);
+
+    const hiddenFeed = await app.inject({
+      method: 'GET',
+      url: '/v1/feed',
+      headers: authHeaders(hiddenUser.accessToken)
+    });
+    const userBFromHiddenFeed = hiddenFeed.json().profiles.find((profile: { id: string }) => profile.id === userB.userId);
+    expect(userBFromHiddenFeed?.age ?? null).toBe(null);
+    expect(userBFromHiddenFeed?.birthDate ?? null).toBe(null);
 
     const firstSwipe = await app.inject({
       method: 'POST',
@@ -159,6 +303,24 @@ describe.sequential('M2-M7 core smoketests', () => {
     expect(matchNotificationsA.json().notifications.some((item: { type: string }) => item.type === 'match')).toBe(true);
     expect(matchNotificationsB.json().notifications.some((item: { type: string }) => item.type === 'match')).toBe(true);
     expect(matchNotificationsA.json().notifications.some((item: { title: string }) => item.title.includes('Novo match com'))).toBe(true);
+    expect(matchNotificationsA.json().notifications.some((item: { payload?: { screen?: string } }) => item.payload?.screen === 'CHAT')).toBe(true);
+
+    const superlike = await app.inject({
+      method: 'POST',
+      url: '/v1/swipes',
+      headers: authHeaders(intruder.accessToken),
+      payload: { targetUserId: userA.userId, direction: 'superlike' }
+    });
+    expect(superlike.statusCode).toBe(200);
+
+    const userANotificationsAfterSuperlike = await app.inject({
+      method: 'GET',
+      url: '/v1/notifications',
+      headers: authHeaders(userA.accessToken)
+    });
+    const superlikeNotification = userANotificationsAfterSuperlike.json().notifications.find((item: { type: string }) => item.type === 'superlike');
+    expect(superlikeNotification).toBeTruthy();
+    expect(superlikeNotification.payload?.screen).toBe('LIKES');
 
     const chats = await app.inject({
       method: 'GET',
@@ -191,6 +353,15 @@ describe.sequential('M2-M7 core smoketests', () => {
     });
     expect(messages.statusCode).toBe(200);
     expect(messages.json().messages.some((message: { text: string }) => message.text === 'Mensagem automatizada de teste')).toBe(true);
+    expect(messages.json().policy.readReceiptsEnabled).toBe(true);
+
+    const chatsForA = await app.inject({
+      method: 'GET',
+      url: '/v1/chats',
+      headers: authHeaders(userA.accessToken)
+    });
+    const chatWithB = chatsForA.json().chats.find((chat: { id: string }) => chat.id === matchId);
+    expect(chatWithB?.readReceiptsEnabled).toBe(false);
 
     const notificationsAfterMessage = await app.inject({
       method: 'GET',
@@ -201,6 +372,7 @@ describe.sequential('M2-M7 core smoketests', () => {
     expect(messageNotification).toBeTruthy();
     expect(String(messageNotification.title)).toContain('Nova mensagem de');
     expect(String(messageNotification.description)).toContain('Mensagem automatizada de teste');
+    expect(messageNotification.payload?.screen).toBe('CHAT');
 
     const wsMessage = await new Promise<any>((resolve, reject) => {
       const senderSocket = new WebSocket(`${wsBaseUrl}/v1/chats/${matchId}/ws?accessToken=${encodeURIComponent(userA.accessToken)}`);
@@ -286,17 +458,21 @@ describe.sequential('M2-M7 core smoketests', () => {
       headers: authHeaders(userA.accessToken)
     });
     expect(systemNotification.json().notifications.some((item: { type: string; title: string }) => item.type === 'system' && item.title === 'Denuncia recebida')).toBe(true);
+    expect(systemNotification.json().notifications.some((item: { title: string; payload?: { screen?: string } }) => item.title === 'Denuncia recebida' && item.payload?.screen === 'REPORT_LIST')).toBe(true);
   }, 30000);
 
   it.skipIf(!isDbSmoke)('M6-M8 ranking returns ordered and filtered profiles', async () => {
     const userA = await registerUser(app, 'ranking-a');
     const userB = await registerUser(app, 'ranking-b');
-    createdUserIds.push(userA.userId, userB.userId);
+    const hiddenUser = await registerUser(app, 'ranking-hidden');
+    createdUserIds.push(userA.userId, userB.userId, hiddenUser.userId);
 
     const { payload: payloadA } = await upsertProfile(app, userA.accessToken, 'RankingA');
     const { payload: payloadB } = await upsertProfile(app, userB.accessToken, 'RankingB');
+    const { payload: hiddenPayload } = await upsertProfile(app, hiddenUser.accessToken, 'RankingHidden');
     await completePhoto(app, userA.accessToken, 0, 'ranking-a');
     await completePhoto(app, userB.accessToken, 0, 'ranking-b');
+    await completePhoto(app, hiddenUser.accessToken, 0, 'ranking-hidden');
 
     await app.inject({
       method: 'PUT',
@@ -310,6 +486,31 @@ describe.sequential('M2-M7 core smoketests', () => {
       headers: authHeaders(userB.accessToken),
       payload: { ...payloadB, availableToday: true, bio: 'Bio mais completa para ranking B com bastante texto para score.' }
     });
+    await app.inject({
+      method: 'PUT',
+      url: '/v1/profile',
+      headers: authHeaders(hiddenUser.accessToken),
+      payload: { ...hiddenPayload, availableToday: true, bio: 'Bio escondida no ranking com score suficiente.' }
+    });
+    await app.inject({
+      method: 'PUT',
+      url: '/v1/settings',
+      headers: authHeaders(hiddenUser.accessToken),
+      payload: {
+        minAge: 18,
+        maxAge: 94,
+        maxDistanceKm: 35,
+        expandDistance: true,
+        expandAge: false,
+        internationalMode: false,
+        discoveryState: null,
+        discoveryCity: null,
+        profileVisible: false,
+        hideAge: false,
+        readReceiptsEnabled: true,
+        allowMarketingEmails: false
+      }
+    });
 
     const ranking = await app.inject({
       method: 'GET',
@@ -322,6 +523,7 @@ describe.sequential('M2-M7 core smoketests', () => {
     expect(rankingJson.ranking[0].score).toBeGreaterThanOrEqual(rankingJson.ranking[1].score);
     expect(rankingJson.ranking.some((item: { id: string }) => item.id === userA.userId)).toBe(true);
     expect(rankingJson.ranking.some((item: { id: string }) => item.id === userB.userId)).toBe(true);
+    expect(rankingJson.ranking.some((item: { id: string }) => item.id === hiddenUser.userId)).toBe(false);
   }, 30000);
 
   it.skipIf(!isDbSmoke)('M7 billing endpoints handle configured and non-configured scenarios deterministically', async () => {

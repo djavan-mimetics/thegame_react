@@ -14,7 +14,10 @@ Plano de testes por módulo: `MILESTONE_TESTS.md`.
 - [x] Feed, likes, chat e notificações com persistência em banco
 - [x] Chat realtime via WebSocket com fallback HTTP no frontend
 - [x] Notificações: listagem e marcação de lida (`POST /v1/notifications/:id/seen`)
+- [x] Notificações acionáveis com payloads de UX e navegação contextual
+- [x] Eventos automáticos de notificação para superlike, senha e billing
 - [x] Ranking persistido (`GET /v1/ranking`) integrado no frontend
+- [x] Enforcement de preferências sensíveis em feed/chat/ranking
 - [x] Denúncias persistidas (`POST /v1/reports`, `GET /v1/reports`, `GET /v1/reports/:id`)
 - [x] Billing Stripe implementado no backend:
 	- checkout (`POST /v1/billing/checkout`)
@@ -37,8 +40,7 @@ Plano de testes por módulo: `MILESTONE_TESTS.md`.
 - [ ] Fechar compliance de loja (Data Safety Google + Privacy Labels Apple)
 
 ### P1 — Importante
-- [ ] Completar notificações de domínio automáticas (`system` e refinamentos de UX)
-- [ ] Persistência completa em Security/Settings (preferências sensíveis)
+- [x] Persistência completa em Security/Settings (preferências sensíveis)
 - [x] Rate limit para auth/swipes/chat + auditoria mínima de ações sensíveis
 - [ ] Rotina de backup + alertas + plano de rollback
 
@@ -46,7 +48,8 @@ Plano de testes por módulo: `MILESTONE_TESTS.md`.
 
 - [ ] OAuth social Google/Facebook no backend + integração frontend
 - [ ] Cobertura restante de smoke/automação para GCS real e billing real com Stripe
-- [ ] Persistência principal de `Security/Settings` + localização/preferências usadas pelo frontend
+- [x] Persistência principal de `Security/Settings` + preferências principais usadas pelo frontend
+- [x] Localização, campos avançados do perfil e preferências sensíveis restantes
 - [ ] Configurar Stripe em ambiente real de teste com webhook HTTPS para validar checkout end-to-end
 
 ### P2 — Escala e qualidade

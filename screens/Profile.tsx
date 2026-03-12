@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Settings as SettingsIcon, Edit2, Shield, Camera, Bell, Zap } from 'lucide-react';
+import { Settings as SettingsIcon, Edit2, Shield, Camera, Bell, Zap, MapPin } from 'lucide-react';
 import { AppScreen, MyProfile } from '../types';
 
 interface ProfileProps {
@@ -107,6 +107,7 @@ export const Profile: React.FC<ProfileProps> = ({ onNavigate, isPremium, myProfi
             {/* Menu Options */}
             <div className="px-4 space-y-3">
                 <MenuOption icon={Camera} label="Gerenciar Fotos" onClick={() => onNavigate(AppScreen.EDIT_PROFILE)} />
+                <MenuOption icon={MapPin} label="Ajustes de descoberta" onClick={() => onNavigate(AppScreen.SETTINGS)} />
                 <MenuOption icon={Shield} label="Central de Segurança" onClick={() => onNavigate(AppScreen.SECURITY)} />
             </div>
             

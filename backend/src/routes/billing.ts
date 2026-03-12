@@ -130,14 +130,14 @@ export async function registerBillingRoutes(app: FastifyInstance, config: AppCon
   app.post('/v1/billing/cancel', { preHandler: app.requireAuth }, async (req, reply) => {
     const userId = req.user!.userId;
     const subRes = await app.db.pool.query(
-      `SELECT id, provider_subscription_id
+      `SELECT id, provider_subscription_id, plan
        FROM subscriptions
        WHERE user_id = $1
        ORDER BY updated_at DESC, created_at DESC
        LIMIT 1`,
       [userId]
     );
-    const sub = subRes.rows[0] as { id: string; provider_subscription_id: string | null } | undefined;
+    const sub = subRes.rows[0] as { id: string; provider_subscription_id: string | null; plan?: string | null } | undefined;
     if (!sub) return reply.code(404).send({ error: 'subscription_not_found' });
 
     if (stripe && sub.provider_subscription_id) {
@@ -152,6 +152,15 @@ export async function registerBillingRoutes(app: FastifyInstance, config: AppCon
        WHERE id = $1`,
       [sub.id]
     );
+
+    try {
+      await app.notifications.notifyBillingCancellationScheduled({
+        userId,
+        plan: sub.plan ?? null
+      });
+    } catch (error) {
+      req.log.error({ err: error, userId, subscriptionId: sub.id }, 'system_notification_failed');
+    }
 
     return reply.send({ ok: true });
   });
@@ -260,6 +269,20 @@ export async function registerBillingRoutes(app: FastifyInstance, config: AppCon
              WHERE id = $1`,
             [localSub.id, event.type === 'invoice.payment_succeeded' ? 'active' : 'past_due', subscriptionId]
           );
+
+          try {
+            if (event.type === 'invoice.payment_succeeded') {
+              const planRes = await app.db.pool.query('SELECT plan FROM subscriptions WHERE id = $1 LIMIT 1', [localSub.id]);
+              const plan = (planRes.rows[0] as { plan?: string } | undefined)?.plan ?? 'premium';
+              await app.notifications.notifyBillingPaymentSucceeded({ userId: localSub.user_id, plan });
+            } else {
+              const planRes = await app.db.pool.query('SELECT plan FROM subscriptions WHERE id = $1 LIMIT 1', [localSub.id]);
+              const plan = (planRes.rows[0] as { plan?: string } | undefined)?.plan ?? null;
+              await app.notifications.notifyBillingPaymentFailed({ userId: localSub.user_id, plan });
+            }
+          } catch (error) {
+            req.log.error({ err: error, userId: localSub.user_id, subscriptionId: localSub.id, eventType: event.type }, 'system_notification_failed');
+          }
         }
       }
     }

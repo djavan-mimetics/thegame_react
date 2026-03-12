@@ -7,7 +7,7 @@ export async function registerRankingRoutes(app: FastifyInstance, _config: AppCo
     const limit = Math.min(Math.max(Number(query.limit ?? 50), 1), 100);
 
     const params: unknown[] = [];
-    let where = 'WHERE p.deleted_at IS NULL AND p.ranking_enabled = true';
+    let where = 'WHERE p.deleted_at IS NULL AND p.ranking_enabled = true AND COALESCE(pp.profile_visible, true) = true';
 
     if (query.state) {
       params.push(query.state);
@@ -40,6 +40,7 @@ export async function registerRankingRoutes(app: FastifyInstance, _config: AppCo
        FROM profiles p
        LEFT JOIN states s ON s.id = p.state_id
        LEFT JOIN cities c ON c.id = p.city_id
+      LEFT JOIN profile_preferences pp ON pp.user_id = p.user_id
        ${where}
        ORDER BY score DESC, p.updated_at DESC
        LIMIT $${params.length}`,

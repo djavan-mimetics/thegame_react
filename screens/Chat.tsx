@@ -51,6 +51,7 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [messagesError, setMessagesError] = useState<string | null>(null);
     const [chatSocket, setChatSocket] = useState<WebSocket | null>(null);
+    const [chatPolicy, setChatPolicy] = useState<{ readReceiptsEnabled: boolean } | null>(null);
 
     const activeProfile = selectedChat ? { tags: selectedChat.tags || [], images: selectedChat.images || [] } : null;
     const complimentOptions = selectedChat ? createCompliments(selectedChat.name, activeProfile?.tags || []) : [];
@@ -100,11 +101,13 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
                 setMessagesError('Nao foi possivel carregar as mensagens.');
                 return;
             }
-            const data = (await res.json()) as { messages: Message[] };
+            const data = (await res.json()) as { messages: Message[]; policy?: { readReceiptsEnabled?: boolean } };
             setMessages([icebreaker, ...(data.messages || [])]);
+            setChatPolicy({ readReceiptsEnabled: data.policy?.readReceiptsEnabled ?? true });
         } catch (err) {
             setMessages([icebreaker]);
             setMessagesError('Nao foi possivel carregar as mensagens.');
+            setChatPolicy(null);
         } finally {
             setIsLoadingMessages(false);
         }
@@ -124,6 +127,7 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
     useEffect(() => {
         if (!selectedChat) {
             setMessages([]);
+            setChatPolicy(null);
             return;
         }
 
@@ -186,6 +190,7 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
             text: trimmed,
             timestamp: getTimestamp(),
             isMe: !fromApp,
+            readReceiptsEnabled: chatPolicy?.readReceiptsEnabled,
             variant
         };
 
@@ -263,6 +268,11 @@ export const Chat: React.FC<ChatProps> = ({ onNavigate, setReportContext }) => {
                     </div>
 
                     <div className="flex items-center gap-2">
+                        {chatPolicy?.readReceiptsEnabled === false && (
+                            <span className="inline-flex px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-gray-300 border border-white/10 rounded-full">
+                                Sem recibo de leitura
+                            </span>
+                        )}
                         <button 
                             onClick={() => setIsComplimentModalOpen(true)}
                             className="px-3 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-brand-primary border border-brand-primary/40 rounded-full hover:bg-brand-primary/10 transition-colors flex items-center gap-1"

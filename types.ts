@@ -2,7 +2,7 @@
 export interface UserProfile {
   id: string;
   name: string;
-  age: number;
+  age: number | null;
   bio: string;
   distance: number; // in km
   images: string[];
@@ -38,17 +38,40 @@ export interface MyProfile {
   birthDate: string;
   city: string;
   state: string;
+  discoveryCity?: string;
+  discoveryState?: string;
   gender: string;
   lookingFor: string[];
   images: string[];
   bio: string;
   rankingEnabled: boolean;
   loginMethod: 'email' | 'google' | 'facebook';
+  relationship?: string;
+  education?: string;
+  family?: string;
+  sign?: string;
+  pets?: string;
+  drink?: string;
+  smoke?: string;
+  exercise?: string;
+  food?: string;
+  sleep?: string;
+  personality: string[];
   height?: string;
   currentTag?: string;
   classification?: string;
   billSplit?: string;
   availableToday?: boolean;
+  minAge: number;
+  maxAge: number;
+  maxDistanceKm: number;
+  expandDistance: boolean;
+  expandAge: boolean;
+  internationalMode: boolean;
+  profileVisible: boolean;
+  hideAge: boolean;
+  readReceiptsEnabled: boolean;
+  allowMarketingEmails: boolean;
   // ... other details
 }
 
@@ -60,6 +83,7 @@ export interface ChatPreview {
   lastMessage: string;
   timestamp: string;
   unread: number;
+  readReceiptsEnabled?: boolean;
   tags?: string[];
   images?: string[];
 }
@@ -70,6 +94,7 @@ export interface Message {
   text: string;
   timestamp: string;
   isMe: boolean;
+  readReceiptsEnabled?: boolean;
   variant?: 'icebreaker' | 'compliment';
 }
 
@@ -137,4 +162,12 @@ export interface NotificationItem {
   description: string;
   timestamp: string;
   seen?: boolean;
+  payload?: {
+    screen?: string;
+    actionLabel?: string;
+    counterpartName?: string;
+    offenderName?: string;
+    plan?: string | null;
+    source?: string;
+  };
 }

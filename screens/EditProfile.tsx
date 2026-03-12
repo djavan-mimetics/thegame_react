@@ -99,7 +99,7 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
   // --- State ---
   const [smartPhotos, setSmartPhotos] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-        const [saveError, setSaveError] = useState('');
+    const [saveError, setSaveError] = useState('');
     const [optionsData, setOptionsData] = useState({
         genders: OPTIONS.gender,
         lookingFor: OPTIONS.lookingFor,
@@ -121,10 +121,10 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
     });
   
   // Local state for UI toggles
-  const [ageRange, setAgeRange] = useState<[number, number]>([18, 25]);
-  const [distance, setDistance] = useState<number>(10);
-  const [expandDistance, setExpandDistance] = useState(true);
-  const [expandAge, setExpandAge] = useState(false);
+    const ageRange: [number, number] = [myProfile.minAge, myProfile.maxAge];
+    const distance = myProfile.maxDistanceKm;
+    const expandDistance = myProfile.expandDistance;
+    const expandAge = myProfile.expandAge;
 
   // Photo Editing State
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
@@ -133,23 +133,9 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
   const [activePhotoIndex, setActivePhotoIndex] = useState<number | null>(null); 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Profile Data (Using lifted state for critical fields, local for detailed)
-  const [profileData, setProfileData] = useState({
-        relationship: "Namoro",
-    sign: "Câncer",
-    education: "Superior completo",
-    family: "Não quero filhos",
-    personality: "",
-    pets: "Não tenho pets",
-    drink: "Socialmente",
-    smoke: "Fumo quando bebo",
-    exercise: "Às vezes",
-    food: "",
-    sleep: ""
-  });
-
   // UI State
-    type ActiveModal = keyof typeof profileData | 'interests' | 'gender' | 'lookingFor' | 'height' | 'classification' | 'billSplit' | 'availableToday' | null;
+    type AdvancedModal = 'relationship' | 'sign' | 'education' | 'family' | 'pets' | 'drink' | 'smoke' | 'exercise' | 'food' | 'sleep' | 'personality';
+    type ActiveModal = AdvancedModal | 'interests' | 'gender' | 'lookingFor' | 'height' | 'classification' | 'billSplit' | 'availableToday' | null;
     const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [tempInputValue, setTempInputValue] = useState("");
     const currentTag = myProfile.currentTag || '';
@@ -192,8 +178,8 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
     }, []);
 
   // --- Handlers ---
-  const handleUpdate = (key: string, value: string) => {
-    setProfileData(prev => ({ ...prev, [key]: value }));
+    const handleUpdate = (key: keyof MyProfile, value: string) => {
+        updateProfile(key, value);
     setActiveModal(null);
   };
 
@@ -214,8 +200,8 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
     const val = parseInt(e.target.value);
     const newRange = [...ageRange] as [number, number];
     newRange[index] = val;
-    if (index === 0 && val < newRange[1]) setAgeRange(newRange);
-    if (index === 1 && val > newRange[0]) setAgeRange(newRange);
+        if (index === 0 && val < newRange[1]) updateProfile('minAge', newRange[0]);
+        if (index === 1 && val > newRange[0]) updateProfile('maxAge', newRange[1]);
   };
 
   // --- Photo Handlers ---
@@ -358,6 +344,21 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
             </div>
         );
     }
+    if (activeModal === 'personality') {
+        return (
+            <div className="space-y-1">
+                {optionsData.personality.map(option => {
+                    const isSelected = myProfile.personality.includes(option);
+                    return (
+                        <button key={option} onClick={() => { updateProfile('personality', [option]); setActiveModal(null); }} className={`w-full text-left p-4 rounded-xl flex justify-between items-center ${isSelected ? 'bg-brand-primary/20 text-brand-primary font-bold border border-brand-primary/50' : 'text-gray-300 hover:bg-white/5'}`}>
+                            {option}
+                            {isSelected && <Check size={18} />}
+                        </button>
+                    );
+                })}
+            </div>
+        );
+    }
     const optionsByModal: Record<string, string[]> = {
         relationship: optionsData.relationships,
         sign: optionsData.signs,
@@ -369,7 +370,6 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
         exercise: optionsData.exercises,
         food: optionsData.foods,
         sleep: optionsData.sleeps,
-        personality: optionsData.personality,
         gender: optionsData.genders,
         lookingFor: optionsData.lookingFor
     };
@@ -377,7 +377,7 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
     return (
         <div className="space-y-1">
             {options.map(option => (
-                <button key={option} onClick={() => handleUpdate(activeModal as string, option)} className={`w-full text-left p-4 rounded-xl flex justify-between items-center ${profileData[activeModal as keyof typeof profileData] === option ? 'bg-brand-primary/20 text-brand-primary font-bold border border-brand-primary/50' : 'text-gray-300 hover:bg-white/5'}`}>{option}{profileData[activeModal as keyof typeof profileData] === option && <Check size={18} />}</button>
+                <button key={option} onClick={() => handleUpdate(activeModal as keyof MyProfile, option)} className={`w-full text-left p-4 rounded-xl flex justify-between items-center ${myProfile[activeModal as keyof MyProfile] === option ? 'bg-brand-primary/20 text-brand-primary font-bold border border-brand-primary/50' : 'text-gray-300 hover:bg-white/5'}`}>{option}{myProfile[activeModal as keyof MyProfile] === option && <Check size={18} />}</button>
             ))}
         </div>
     );
@@ -476,7 +476,7 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
                     </div>
                     <div className="flex items-center justify-between border-t border-white/5 pt-4">
                         <span className="text-gray-300 text-sm max-w-[200px]">Mostrar pessoas um pouco fora da minha faixa de preferência se eu ficar sem perfis pra ver</span>
-                        <Toggle checked={expandAge} onChange={() => setExpandAge(!expandAge)} />
+                        <Toggle checked={expandAge} onChange={() => updateProfile('expandAge', !expandAge)} />
                     </div>
                  </div>
 
@@ -490,11 +490,11 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
                          <div className="absolute w-full h-1 bg-gray-700 rounded-full"></div>
                          <div className="absolute h-1 bg-brand-primary rounded-full" style={{ width: `${((distance - 10) / (500 - 10)) * 100}%` }}></div>
                          <div className="absolute w-5 h-5 bg-brand-primary rounded-full shadow border-2 border-brand-dark pointer-events-none z-20" style={{ left: `calc(${((distance - 10) / (500 - 10)) * 100}% - 10px)` }}></div>
-                         <input type="range" min="10" max="500" value={distance} onChange={(e) => setDistance(parseInt(e.target.value))} className="absolute w-full h-full opacity-0 cursor-pointer z-10" />
+                         <input type="range" min="10" max="500" value={distance} onChange={(e) => updateProfile('maxDistanceKm', parseInt(e.target.value, 10))} className="absolute w-full h-full opacity-0 cursor-pointer z-10" />
                     </div>
                     <div className="flex items-center justify-between border-t border-white/5 pt-4">
                         <span className="text-gray-300 text-sm max-w-[200px]">Mostrar pessoas mais longe de mim se eu ficar sem perfis pra ver</span>
-                        <Toggle checked={expandDistance} onChange={() => setExpandDistance(!expandDistance)} />
+                        <Toggle checked={expandDistance} onChange={() => updateProfile('expandDistance', !expandDistance)} />
                     </div>
                  </div>
             </div>
@@ -652,7 +652,7 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
                 <ListItem label="Você é" value={myProfile.gender} icon={User} onClick={() => setActiveModal('gender')} />
                 <ListItem label="Você procura por" value={myProfile.lookingFor.join(', ')} icon={Heart} onClick={() => setActiveModal('lookingFor')} />
                 <ListItem label="Altura" value={myProfile.height || "Adicionar"} icon={Ruler} onClick={() => setActiveModal('height')} />
-                <ListItem label="Relacionamento" value={profileData.relationship} icon={HeartHandshake} onClick={() => setActiveModal('relationship')} />
+                <ListItem label="Relacionamento" value={myProfile.relationship || "Adicionar"} icon={HeartHandshake} onClick={() => setActiveModal('relationship')} />
                 <ListItem label="Como você se classifica?" value={myProfile.classification || "Adicionar"} icon={Trophy} onClick={() => setActiveModal('classification')} />
                 <ListItem label="No date você paga ou racha a conta?" value={myProfile.billSplit || "Adicionar"} icon={HeartHandshake} onClick={() => setActiveModal('billSplit')} split />
                 <ListItem label="Está disponível para um date hoje?" value={myProfile.availableToday === true ? 'Quero sair hoje' : myProfile.availableToday === false ? 'Outro dia eu saio' : 'Adicionar'} icon={Sun} onClick={() => setActiveModal('availableToday')} split />
@@ -661,21 +661,21 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
             {/* Mais sobre mim */}
             <div className="space-y-1 pt-4">
                 <h2 className="text-gray-500 font-bold text-xs uppercase px-2 mb-2 tracking-wider">Mais sobre mim</h2>
-                <ListItem label="Signo" value={profileData.sign} icon={Sun} onClick={() => setActiveModal('sign')} />
-                <ListItem label="Formação" value={profileData.education} icon={GraduationCap} onClick={() => setActiveModal('education')} />
-                <ListItem label="Família" value={profileData.family} icon={Users} onClick={() => setActiveModal('family')} />
-                <ListItem label="Personalidade" value={profileData.personality || "Adicionar"} icon={Smile} onClick={() => setActiveModal('personality')} />
+                <ListItem label="Signo" value={myProfile.sign || "Adicionar"} icon={Sun} onClick={() => setActiveModal('sign')} />
+                <ListItem label="Formação" value={myProfile.education || "Adicionar"} icon={GraduationCap} onClick={() => setActiveModal('education')} />
+                <ListItem label="Família" value={myProfile.family || "Adicionar"} icon={Users} onClick={() => setActiveModal('family')} />
+                <ListItem label="Personalidade" value={myProfile.personality.join(', ') || "Adicionar"} icon={Smile} onClick={() => setActiveModal('personality')} />
             </div>
 
             {/* Estilo de vida */}
             <div className="space-y-1 pt-4">
                 <h2 className="text-gray-500 font-bold text-xs uppercase px-2 mb-2 tracking-wider">Estilo de vida</h2>
-                <ListItem label="Pets" value={profileData.pets} icon={Dog} onClick={() => setActiveModal('pets')} />
-                <ListItem label="Bebida" value={profileData.drink} icon={Wine} onClick={() => setActiveModal('drink')} />
-                <ListItem label="Fumo" value={profileData.smoke} icon={Cigarette} onClick={() => setActiveModal('smoke')} />
-                <ListItem label="Atividade física" value={profileData.exercise} icon={Dumbbell} onClick={() => setActiveModal('exercise')} />
-                <ListItem label="Minha alimentação" value={profileData.food || "Adicionar"} icon={Pizza} onClick={() => setActiveModal('food')} />
-                <ListItem label="Hábitos de sono" value={profileData.sleep || "Adicionar"} icon={Moon} onClick={() => setActiveModal('sleep')} />
+                <ListItem label="Pets" value={myProfile.pets || "Adicionar"} icon={Dog} onClick={() => setActiveModal('pets')} />
+                <ListItem label="Bebida" value={myProfile.drink || "Adicionar"} icon={Wine} onClick={() => setActiveModal('drink')} />
+                <ListItem label="Fumo" value={myProfile.smoke || "Adicionar"} icon={Cigarette} onClick={() => setActiveModal('smoke')} />
+                <ListItem label="Atividade física" value={myProfile.exercise || "Adicionar"} icon={Dumbbell} onClick={() => setActiveModal('exercise')} />
+                <ListItem label="Minha alimentação" value={myProfile.food || "Adicionar"} icon={Pizza} onClick={() => setActiveModal('food')} />
+                <ListItem label="Hábitos de sono" value={myProfile.sleep || "Adicionar"} icon={Moon} onClick={() => setActiveModal('sleep')} />
             </div>
 
             <div className="pt-6">
@@ -697,7 +697,7 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
                                     state: myProfile.state,
                                     gender: myProfile.gender,
                                     lookingFor: myProfile.lookingFor,
-                                    relationship: profileData.relationship,
+                                    relationship: myProfile.relationship,
                                     classification: myProfile.classification,
                                     billSplit: myProfile.billSplit,
                                     height: myProfile.height,
@@ -705,21 +705,40 @@ export const EditProfile: React.FC<EditProfileProps> = ({ onNavigate, myProfile,
                                     rankingEnabled: myProfile.rankingEnabled,
                                     availableToday: myProfile.availableToday,
                                     currentTag: myProfile.currentTag,
-                                    education: profileData.education,
-                                    family: profileData.family,
-                                    sign: profileData.sign,
-                                    pets: profileData.pets,
-                                    drink: profileData.drink,
-                                    smoke: profileData.smoke,
-                                    exercise: profileData.exercise,
-                                    food: profileData.food,
-                                    sleep: profileData.sleep,
-                                    personality: profileData.personality ? [profileData.personality] : [],
+                                    education: myProfile.education,
+                                    family: myProfile.family,
+                                    sign: myProfile.sign,
+                                    pets: myProfile.pets,
+                                    drink: myProfile.drink,
+                                    smoke: myProfile.smoke,
+                                    exercise: myProfile.exercise,
+                                    food: myProfile.food,
+                                    sleep: myProfile.sleep,
+                                    personality: myProfile.personality,
                                     images: uploadedImages
                                 })
                             });
 
-                            if (!saveRes.ok) {
+                            const settingsRes = await apiFetch('/v1/settings', {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    minAge: myProfile.minAge,
+                                    maxAge: myProfile.maxAge,
+                                    maxDistanceKm: myProfile.maxDistanceKm,
+                                    expandDistance: myProfile.expandDistance,
+                                    expandAge: myProfile.expandAge,
+                                    internationalMode: myProfile.internationalMode,
+                                    discoveryState: myProfile.discoveryState || null,
+                                    discoveryCity: myProfile.discoveryCity || null,
+                                    profileVisible: myProfile.profileVisible,
+                                    hideAge: myProfile.hideAge,
+                                    readReceiptsEnabled: myProfile.readReceiptsEnabled,
+                                    allowMarketingEmails: myProfile.allowMarketingEmails
+                                })
+                            });
+
+                            if (!saveRes.ok || !settingsRes.ok) {
                                 setSaveError('Nao foi possivel salvar o perfil.');
                                 return;
                             }

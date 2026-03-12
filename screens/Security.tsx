@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { AppScreen } from '../types';
-import { ArrowLeft, Lock, FileText, EyeOff, Flag, HelpCircle, Info, LogOut, Trash2 } from 'lucide-react';
+import { ArrowLeft, Lock, FileText, EyeOff, Flag, HelpCircle, Info, LogOut, Trash2, SlidersHorizontal } from 'lucide-react';
 import logoQD from '../src/img/logo_qd.png';
 import { clearSessionTokens } from '../authClient';
 import { apiFetch } from '../apiClient';
@@ -69,6 +69,7 @@ export const Security: React.FC<SecurityProps> = ({ onNavigate }) => {
         
         {/* Menu Items */}
         <div className="space-y-3 mb-8">
+          <MenuOption icon={SlidersHorizontal} label="Ajustes de descoberta" onClick={() => onNavigate(AppScreen.SETTINGS)} />
             <MenuOption icon={Lock} label="Alterar minha senha" onClick={() => onNavigate(AppScreen.CHANGE_PASSWORD)} />
             <MenuOption icon={FileText} label="Termos de Uso" onClick={() => onNavigate(AppScreen.TERMS_SECURITY)} />
             <MenuOption icon={EyeOff} label="Política de Privacidade" onClick={() => onNavigate(AppScreen.PRIVACY_SECURITY)} />

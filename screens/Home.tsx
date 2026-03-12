@@ -62,6 +62,10 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
     const currentProfile = profiles[0];
     const currentImages = currentProfile?.images || [];
     const displayedImage = currentImages[currentImageIndex] || currentImages[0] || fallbackProfileImage;
+    const ageAndHeight = [
+        typeof currentProfile?.age === 'number' ? String(currentProfile.age) : null,
+        currentProfile?.height || null
+    ].filter(Boolean).join(', ');
 
     const lookingForChips = currentProfile?.lookingFor || [];
     const personalityTraits = currentProfile?.personality || [];
@@ -334,10 +338,12 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
                         <div className="w-full flex items-center justify-between mb-2">
                             <div className="min-w-0">
                                 <h2 className="text-[34px] font-semibold text-white drop-shadow-md truncate">
-                                    {currentProfile.name},
-                                    <span className="text-[23px] font-medium text-gray-200 drop-shadow-md">
-                                        {' '}{currentProfile.age}{currentProfile.height ? `, ${currentProfile.height}` : ''}
-                                    </span>
+                                    {currentProfile.name}
+                                    {ageAndHeight ? (
+                                        <span className="text-[23px] font-medium text-gray-200 drop-shadow-md">
+                                            {`, ${ageAndHeight}`}
+                                        </span>
+                                    ) : null}
                                 </h2>
                             </div>
                             {/* Info Button - Clickable */}

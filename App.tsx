@@ -12,6 +12,7 @@ import { Chat } from './screens/Chat';
 import { Terms } from './screens/Terms';
 import { Privacy } from './screens/Privacy';
 import { EditProfile } from './screens/EditProfile';
+import { Settings } from './screens/Settings';
 import { Premium } from './screens/Premium';
 import { Security } from './screens/Security';
 import { Help } from './screens/Help';
@@ -37,6 +38,7 @@ const PROTECTED_SCREENS = new Set<AppScreen>([
   AppScreen.PROFILE,
   AppScreen.EDIT_PROFILE,
   AppScreen.PREMIUM,
+  AppScreen.SETTINGS,
   AppScreen.PAYMENT_HISTORY,
   AppScreen.SECURITY,
   AppScreen.HELP,
@@ -113,27 +115,54 @@ const App: React.FC = () => {
       }
       setIsAuthenticated(true);
 
-      const res = await apiFetch('/v1/profile');
-      if (!res.ok) return;
-      const data = (await res.json()) as { profile: any };
-      if (!data.profile) return;
+      const [profileRes, settingsRes] = await Promise.all([
+        apiFetch('/v1/profile'),
+        apiFetch('/v1/settings')
+      ]);
+
+      const profileData = profileRes.ok ? (await profileRes.json()) as { profile: any } : null;
+      const settingsData = settingsRes.ok ? (await settingsRes.json()) as { settings: any } : null;
+      if (!profileData?.profile && !settingsData?.settings) return;
 
       setMyProfile((prev) => ({
         ...prev,
-        name: data.profile.name ?? prev.name,
-        birthDate: data.profile.birth_date ?? prev.birthDate,
-        city: data.profile.city_name ?? prev.city,
-        state: data.profile.state_code ?? prev.state,
-        gender: data.profile.gender_label ?? prev.gender,
-        lookingFor: data.profile.lookingFor ?? prev.lookingFor,
-        images: data.profile.photos ?? prev.images,
-        bio: data.profile.bio ?? prev.bio,
-        rankingEnabled: data.profile.ranking_enabled ?? prev.rankingEnabled,
-        height: data.profile.height_cm ? `${data.profile.height_cm} cm` : prev.height,
-        currentTag: data.profile.current_tag ?? prev.currentTag,
-        classification: data.profile.classification ?? prev.classification,
-        billSplit: data.profile.bill_split ?? prev.billSplit,
-        availableToday: data.profile.available_today ?? prev.availableToday
+        name: profileData?.profile?.name ?? prev.name,
+        birthDate: profileData?.profile?.birth_date ?? prev.birthDate,
+        city: profileData?.profile?.city_name ?? prev.city,
+        state: profileData?.profile?.state_code ?? prev.state,
+        gender: profileData?.profile?.gender_label ?? prev.gender,
+        lookingFor: profileData?.profile?.lookingFor ?? prev.lookingFor,
+        images: profileData?.profile?.photos ?? prev.images,
+        bio: profileData?.profile?.bio ?? prev.bio,
+        rankingEnabled: profileData?.profile?.ranking_enabled ?? prev.rankingEnabled,
+        height: profileData?.profile?.height_cm ? `${profileData.profile.height_cm} cm` : prev.height,
+        relationship: profileData?.profile?.relationship ?? prev.relationship,
+        education: profileData?.profile?.education ?? prev.education,
+        family: profileData?.profile?.family ?? prev.family,
+        sign: profileData?.profile?.sign ?? prev.sign,
+        pets: profileData?.profile?.pets ?? prev.pets,
+        drink: profileData?.profile?.drink ?? prev.drink,
+        smoke: profileData?.profile?.smoke ?? prev.smoke,
+        exercise: profileData?.profile?.exercise ?? prev.exercise,
+        food: profileData?.profile?.food ?? prev.food,
+        sleep: profileData?.profile?.sleep ?? prev.sleep,
+        personality: profileData?.profile?.personality ?? prev.personality,
+        currentTag: profileData?.profile?.current_tag ?? prev.currentTag,
+        classification: profileData?.profile?.classification ?? prev.classification,
+        billSplit: profileData?.profile?.bill_split ?? prev.billSplit,
+        availableToday: profileData?.profile?.available_today ?? prev.availableToday,
+        minAge: settingsData?.settings?.minAge ?? prev.minAge,
+        maxAge: settingsData?.settings?.maxAge ?? prev.maxAge,
+        maxDistanceKm: settingsData?.settings?.maxDistanceKm ?? prev.maxDistanceKm,
+        expandDistance: settingsData?.settings?.expandDistance ?? prev.expandDistance,
+        expandAge: settingsData?.settings?.expandAge ?? prev.expandAge,
+        internationalMode: settingsData?.settings?.internationalMode ?? prev.internationalMode,
+        discoveryState: settingsData?.settings?.discoveryState ?? prev.discoveryState,
+        discoveryCity: settingsData?.settings?.discoveryCity ?? prev.discoveryCity,
+        profileVisible: settingsData?.settings?.profileVisible ?? prev.profileVisible,
+        hideAge: settingsData?.settings?.hideAge ?? prev.hideAge,
+        readReceiptsEnabled: settingsData?.settings?.readReceiptsEnabled ?? prev.readReceiptsEnabled,
+        allowMarketingEmails: settingsData?.settings?.allowMarketingEmails ?? prev.allowMarketingEmails
       }));
     };
 
@@ -219,6 +248,7 @@ const App: React.FC = () => {
       {currentScreen === AppScreen.PRIVACY_SECURITY && <Privacy onNavigate={navigate} backScreen={AppScreen.SECURITY} />}
 
       {currentScreen === AppScreen.EDIT_PROFILE && <EditProfile onNavigate={navigate} myProfile={myProfile} updateProfile={updateProfile} completion={calculateCompletion()} />}
+      {currentScreen === AppScreen.SETTINGS && <Settings onNavigate={navigate} myProfile={myProfile} updateProfile={updateProfile} />}
       {currentScreen === AppScreen.PREMIUM && <Premium onNavigate={navigate} isPremium={isPremium} setPremium={setIsPremium} />}
       {currentScreen === AppScreen.PAYMENT_HISTORY && <PaymentHistory onNavigate={navigate} />}
       

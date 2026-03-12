@@ -89,6 +89,15 @@ describe('M1 auth smoketests', () => {
     });
     expect(changeOk.statusCode).toBe(200);
 
+    const notificationsAfterChange = await app.inject({
+      method: 'GET',
+      url: '/v1/notifications',
+      headers: authHeaders(loginJson.accessToken)
+    });
+    const passwordChanged = notificationsAfterChange.json().notifications.find((item: { title: string }) => item.title === 'Senha alterada');
+    expect(passwordChanged).toBeTruthy();
+    expect(passwordChanged.payload?.screen).toBe('SECURITY');
+
     const forgot = await app.inject({
       method: 'POST',
       url: '/v1/auth/forgot-password',
@@ -106,6 +115,15 @@ describe('M1 auth smoketests', () => {
       payload: { token: forgotJson.token, newPassword: resetPassword }
     });
     expect(reset.statusCode).toBe(200);
+
+    const notificationsAfterReset = await app.inject({
+      method: 'GET',
+      url: '/v1/notifications',
+      headers: authHeaders(loginJson.accessToken)
+    });
+    const passwordReset = notificationsAfterReset.json().notifications.find((item: { title: string }) => item.title === 'Senha redefinida');
+    expect(passwordReset).toBeTruthy();
+    expect(passwordReset.payload?.screen).toBe('SECURITY');
 
     const loginAfterReset = await app.inject({
       method: 'POST',

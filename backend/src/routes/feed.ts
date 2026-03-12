@@ -4,8 +4,8 @@ import type { AppConfig } from '../config.js';
 const toPublicProfile = (row: any) => ({
   id: String(row.id ?? ''),
   name: row.name ?? '',
-  birthDate: row.birth_date ?? null,
-  age: Number(row.age ?? 0),
+  birthDate: row.hide_age ? null : row.birth_date ?? null,
+  age: row.hide_age ? null : Number(row.age ?? 0),
   bio: row.bio ?? '',
   distance: Number(row.distance ?? 0),
   images: Array.isArray(row.images) ? row.images.filter(Boolean) : [],
@@ -66,6 +66,7 @@ export async function registerFeedRoutes(app: FastifyInstance, _config: AppConfi
       `SELECT p.user_id AS id,
               p.name,
               p.birth_date,
+              COALESCE(pp.hide_age, false) AS hide_age,
               EXTRACT(YEAR FROM age(now(), p.birth_date))::int AS age,
               p.bio,
               0::int AS distance,
@@ -96,6 +97,7 @@ export async function registerFeedRoutes(app: FastifyInstance, _config: AppConfi
        LEFT JOIN relationships r ON r.id = p.relationship_id
        LEFT JOIN educations e ON e.id = p.education_id
        LEFT JOIN families f ON f.id = p.family_id
+      LEFT JOIN profile_preferences pp ON pp.user_id = p.user_id
        LEFT JOIN drinks d ON d.id = p.drink_id
        LEFT JOIN smokes sm ON sm.id = p.smoke_id
        LEFT JOIN pets pe ON pe.id = p.pets_id
@@ -103,6 +105,7 @@ export async function registerFeedRoutes(app: FastifyInstance, _config: AppConfi
        LEFT JOIN foods fo ON fo.id = p.food_id
        LEFT JOIN sleeps sl ON sl.id = p.sleep_id
        WHERE p.user_id <> $1
+         AND COALESCE(pp.profile_visible, true) = true
          AND EXISTS (
            SELECT 1 FROM profile_photos ph
            WHERE ph.user_id = p.user_id AND ph.deleted_at IS NULL
@@ -137,6 +140,17 @@ export async function registerFeedRoutes(app: FastifyInstance, _config: AppConfi
        ON CONFLICT (from_user_id, to_user_id) DO UPDATE SET direction = EXCLUDED.direction, created_at = now()`,
       [userId, body.targetUserId, body.direction]
     );
+
+    if (body.direction === 'superlike') {
+      try {
+        await app.notifications.notifySuperlikeReceived({
+          recipientUserId: body.targetUserId,
+          senderUserId: userId
+        });
+      } catch (error) {
+        req.log.error({ err: error, userId, targetUserId: body.targetUserId }, 'superlike_notification_failed');
+      }
+    }
 
     if (body.direction === 'like' || body.direction === 'superlike') {
       const res = await app.db.pool.query(
